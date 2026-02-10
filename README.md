@@ -33,6 +33,18 @@
 - Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
   - Environment variables automatically assigned to Vercel project
 
+## Admin setup (services, queues, gallery)
+
+1. Run the SQL in [supabase/admin_schema.sql](supabase/admin_schema.sql) inside the Supabase SQL editor.
+2. Create admin roles for your users, for example:
+
+  ```sql
+  insert into public.user_roles (user_id, role)
+  values ('YOUR_USER_ID', 'superadmin');
+  ```
+
+3. Sign in and visit `/admin`.
+
 ## Demo
 
 You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).

@@ -1,0 +1,181 @@
+import { revalidatePath } from "next/cache";
+
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/roles";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+async function createGalleryItem(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const title = String(formData.get("title") || "").trim();
+  const imageUrl = String(formData.get("image_url") || "").trim();
+  const altText = String(formData.get("alt_text") || "").trim();
+  const isVisible = formData.get("is_visible") === "on";
+
+  if (!title || !imageUrl) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("gallery_images").insert({
+    title,
+    image_url: imageUrl,
+    alt_text: altText || null,
+    is_visible: isVisible,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/gallery");
+}
+
+async function toggleGalleryVisibility(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "");
+  const isVisible = formData.get("is_visible") === "true";
+
+  if (!id) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("gallery_images")
+    .update({ is_visible: !isVisible })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/gallery");
+}
+
+async function deleteGalleryItem(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "");
+
+  if (!id) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("gallery_images").delete().eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/gallery");
+}
+
+export default async function GalleryPage() {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data: gallery } = await supabase
+    .from("gallery_images")
+    .select("id, title, image_url, alt_text, is_visible")
+    .order("created_at", { ascending: false });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Gallery management</h1>
+        <p className="text-sm text-muted-foreground">
+          Upload and control which photos are visible to normal users.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add gallery image</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={createGalleryItem} className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
+              <Input id="title" name="title" required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="image_url">Image URL</Label>
+              <Input id="image_url" name="image_url" required />
+            </div>
+            <div className="grid gap-2 md:col-span-2">
+              <Label htmlFor="alt_text">Alt text</Label>
+              <Input id="alt_text" name="alt_text" />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input name="is_visible" type="checkbox" defaultChecked />
+              Visible to users
+            </label>
+            <div className="md:col-span-2">
+              <Button type="submit">Add image</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Current gallery</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {gallery?.length ? (
+            gallery.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-2 border rounded-md p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">{item.title}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {item.image_url}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <form action={toggleGalleryVisibility}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <input
+                        type="hidden"
+                        name="is_visible"
+                        value={String(item.is_visible)}
+                      />
+                      <Button size="sm" variant="outline" type="submit">
+                        {item.is_visible ? "Hide" : "Show"}
+                      </Button>
+                    </form>
+                    <form action={deleteGalleryItem}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <Button size="sm" variant="destructive" type="submit">
+                        Delete
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+                {item.alt_text && (
+                  <p className="text-sm text-muted-foreground">
+                    {item.alt_text}
+                  </p>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">No images yet.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

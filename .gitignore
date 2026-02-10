@@ -34,6 +34,9 @@ yarn-error.log*
 .env*.local
 .env
 
+# Supabase local SQL exports
+/supabase/*.sql
+
 # vercel
 .vercel
 
