@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 import { requireAdmin } from "@/lib/supabase/roles";
 
 export default async function AdminLayout({

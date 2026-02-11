@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/roles";
@@ -12,18 +13,35 @@ async function createGalleryItem(formData: FormData) {
   await requireAdmin();
 
   const title = String(formData.get("title") || "").trim();
-  const imageUrl = String(formData.get("image_url") || "").trim();
   const altText = String(formData.get("alt_text") || "").trim();
   const isVisible = formData.get("is_visible") === "on";
+  const file = formData.get("image");
 
-  if (!title || !imageUrl) {
+  if (!title || !(file instanceof File) || file.size === 0) {
     return;
   }
 
   const supabase = await createClient();
+  const extension = file.name.split(".").pop() || "jpg";
+  const fileName = `${crypto.randomUUID()}.${extension}`;
+  const path = `gallery/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("gallery")
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data: publicUrl } = supabase.storage
+    .from("gallery")
+    .getPublicUrl(path);
+
   const { error } = await supabase.from("gallery_images").insert({
     title,
-    image_url: imageUrl,
+    image_url: publicUrl.publicUrl,
+    image_path: path,
     alt_text: altText || null,
     is_visible: isVisible,
   });
@@ -64,12 +82,16 @@ async function deleteGalleryItem(formData: FormData) {
   await requireAdmin();
 
   const id = String(formData.get("id") || "");
+  const path = String(formData.get("image_path") || "");
 
   if (!id) {
     return;
   }
 
   const supabase = await createClient();
+  if (path) {
+    await supabase.storage.from("gallery").remove([path]);
+  }
   const { error } = await supabase.from("gallery_images").delete().eq("id", id);
 
   if (error) {
@@ -85,7 +107,7 @@ export default async function GalleryPage() {
 
   const { data: gallery } = await supabase
     .from("gallery_images")
-    .select("id, title, image_url, alt_text, is_visible")
+    .select("id, title, image_url, image_path, alt_text, is_visible")
     .order("created_at", { ascending: false });
 
   return (
@@ -108,8 +130,8 @@ export default async function GalleryPage() {
               <Input id="title" name="title" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="image_url">Image URL</Label>
-              <Input id="image_url" name="image_url" required />
+              <Label htmlFor="image">Image file</Label>
+              <Input id="image" name="image" type="file" accept="image/*" required />
             </div>
             <div className="grid gap-2 md:col-span-2">
               <Label htmlFor="alt_text">Alt text</Label>
@@ -140,7 +162,7 @@ export default async function GalleryPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-semibold">{item.title}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground truncate">
                       {item.image_url}
                     </div>
                   </div>
@@ -158,6 +180,11 @@ export default async function GalleryPage() {
                     </form>
                     <form action={deleteGalleryItem}>
                       <input type="hidden" name="id" value={item.id} />
+                      <input
+                        type="hidden"
+                        name="image_path"
+                        value={item.image_path ?? ""}
+                      />
                       <Button size="sm" variant="destructive" type="submit">
                         Delete
                       </Button>
@@ -168,6 +195,14 @@ export default async function GalleryPage() {
                   <p className="text-sm text-muted-foreground">
                     {item.alt_text}
                   </p>
+                )}
+                {item.image_url && (
+                  <img
+                    src={item.image_url}
+                    alt={item.alt_text || item.title}
+                    className="h-40 w-full rounded-md object-cover"
+                    loading="lazy"
+                  />
                 )}
               </div>
             ))
