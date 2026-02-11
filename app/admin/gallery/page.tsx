@@ -7,6 +7,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GalleryEditDialog } from "@/components/gallery-edit-dialog";
+import { TagManager } from "@/components/tag-manager";
+
+async function createTag(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const name = String(formData.get("tag_name") || "").trim();
+
+  if (!name) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("gallery_tags").insert({ name });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/gallery");
+}
 
 async function createGalleryItem(formData: FormData) {
   "use server";
@@ -16,6 +38,7 @@ async function createGalleryItem(formData: FormData) {
   const altText = String(formData.get("alt_text") || "").trim();
   const isVisible = formData.get("is_visible") === "on";
   const file = formData.get("image");
+  const selectedTags = formData.getAll("selected_tags") as string[];
 
   if (!title || !(file instanceof File) || file.size === 0) {
     return;
@@ -38,16 +61,36 @@ async function createGalleryItem(formData: FormData) {
     .from("gallery")
     .getPublicUrl(path);
 
-  const { error } = await supabase.from("gallery_images").insert({
-    title,
-    image_url: publicUrl.publicUrl,
-    image_path: path,
-    alt_text: altText || null,
-    is_visible: isVisible,
-  });
+  const { data: imageData, error } = await supabase
+    .from("gallery_images")
+    .insert({
+      title,
+      image_url: publicUrl.publicUrl,
+      image_path: path,
+      alt_text: altText || null,
+      is_visible: isVisible,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  // Add tags to image
+  if (imageData && selectedTags.length > 0) {
+    const tagLinks = selectedTags.map((tagId) => ({
+      image_id: imageData.id,
+      tag_id: tagId,
+    }));
+
+    const { error: tagError } = await supabase
+      .from("gallery_image_tags")
+      .insert(tagLinks);
+
+    if (tagError) {
+      throw new Error(tagError.message);
+    }
   }
 
   revalidatePath("/admin/gallery");
@@ -77,6 +120,57 @@ async function toggleGalleryVisibility(formData: FormData) {
   revalidatePath("/admin/gallery");
 }
 
+async function updateGalleryItem(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "");
+  const title = String(formData.get("title") || "").trim();
+  const altText = String(formData.get("alt_text") || "").trim();
+  const isVisible = formData.get("is_visible") === "on";
+  const selectedTags = formData.getAll("selected_tags") as string[];
+
+  if (!id || !title) {
+    return;
+  }
+
+  const supabase = await createClient();
+
+  // Update image
+  const { error: updateError } = await supabase
+    .from("gallery_images")
+    .update({
+      title,
+      alt_text: altText || null,
+      is_visible: isVisible,
+    })
+    .eq("id", id);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  // Update tags
+  await supabase.from("gallery_image_tags").delete().eq("image_id", id);
+
+  if (selectedTags.length > 0) {
+    const tagLinks = selectedTags.map((tagId) => ({
+      image_id: id,
+      tag_id: tagId,
+    }));
+
+    const { error: tagError } = await supabase
+      .from("gallery_image_tags")
+      .insert(tagLinks);
+
+    if (tagError) {
+      throw new Error(tagError.message);
+    }
+  }
+
+  revalidatePath("/admin/gallery");
+}
+
 async function deleteGalleryItem(formData: FormData) {
   "use server";
   await requireAdmin();
@@ -101,13 +195,64 @@ async function deleteGalleryItem(formData: FormData) {
   revalidatePath("/admin/gallery");
 }
 
+async function updateTag(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "");
+  const name = String(formData.get("name") || "").trim();
+
+  if (!id || !name) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("gallery_tags")
+    .update({ name })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/gallery");
+}
+
+async function deleteTag(formData: FormData) {
+  "use server";
+  await requireAdmin();
+
+  const id = String(formData.get("id") || "");
+
+  if (!id) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("gallery_tags").delete().eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/gallery");
+}
+
 export default async function GalleryPage() {
   await requireAdmin();
   const supabase = await createClient();
 
+  const { data: tags } = await supabase
+    .from("gallery_tags")
+    .select("id, name")
+    .order("name");
+
   const { data: gallery } = await supabase
     .from("gallery_images")
-    .select("id, title, image_url, image_path, alt_text, is_visible")
+    .select(
+      "id, title, image_url, image_path, alt_text, is_visible, gallery_image_tags (gallery_tags (id, name))",
+    )
     .order("created_at", { ascending: false });
 
   return (
@@ -137,6 +282,19 @@ export default async function GalleryPage() {
               <Label htmlFor="alt_text">Alt text</Label>
               <Input id="alt_text" name="alt_text" />
             </div>
+            {tags && tags.length > 0 && (
+              <div className="grid gap-2 md:col-span-2">
+                <Label>Tags</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {tags.map((tag) => (
+                    <label key={tag.id} className="flex items-center gap-2 text-sm">
+                      <input name="selected_tags" type="checkbox" value={tag.id} />
+                      {tag.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <label className="flex items-center gap-2 text-sm">
               <input name="is_visible" type="checkbox" defaultChecked />
               Visible to users
@@ -145,6 +303,20 @@ export default async function GalleryPage() {
               <Button type="submit">Add image</Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage tags</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TagManager
+            tags={tags ?? []}
+            onCreateTag={createTag}
+            onUpdateTag={updateTag}
+            onDeleteTag={deleteTag}
+          />
         </CardContent>
       </Card>
 
@@ -167,17 +339,11 @@ export default async function GalleryPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <form action={toggleGalleryVisibility}>
-                      <input type="hidden" name="id" value={item.id} />
-                      <input
-                        type="hidden"
-                        name="is_visible"
-                        value={String(item.is_visible)}
-                      />
-                      <Button size="sm" variant="outline" type="submit">
-                        {item.is_visible ? "Hide" : "Show"}
-                      </Button>
-                    </form>
+                    <GalleryEditDialog
+                      item={item}
+                      allTags={tags ?? []}
+                      onUpdate={updateGalleryItem}
+                    />
                     <form action={deleteGalleryItem}>
                       <input type="hidden" name="id" value={item.id} />
                       <input
@@ -195,6 +361,18 @@ export default async function GalleryPage() {
                   <p className="text-sm text-muted-foreground">
                     {item.alt_text}
                   </p>
+                )}
+                {item.gallery_image_tags && item.gallery_image_tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {item.gallery_image_tags.map((tagLink) => (
+                      <span
+                        key={tagLink.gallery_tags?.id}
+                        className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs"
+                      >
+                        {tagLink.gallery_tags?.name}
+                      </span>
+                    ))}
+                  </div>
                 )}
                 {item.image_url && (
                   <img
