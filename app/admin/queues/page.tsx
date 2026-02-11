@@ -91,6 +91,63 @@ export default async function QueuesPage() {
     )
     .order("queued_at", { ascending: false });
 
+  const queueItems = queues ?? [];
+  const inProgress = queueItems.filter((item) => item.status === "in_progress");
+  const waiting = queueItems.filter((item) => item.status === "waiting");
+  const done = queueItems.filter((item) => item.status === "done");
+  const canceled = queueItems.filter((item) => item.status === "canceled");
+
+  const renderQueueList = (items: typeof queueItems) =>
+    items.length ? (
+      items.map((item) => (
+        <div
+          key={item.id}
+          className="flex flex-col gap-2 border rounded-md p-3"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-semibold">{item.customer_name}</div>
+              <div className="text-xs text-muted-foreground">
+                {item.vehicle_plate} · {item.services?.name} (
+                {item.services?.category})
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <form action={updateQueueStatus}>
+                <input type="hidden" name="id" value={item.id} />
+                <select
+                  name="status"
+                  defaultValue={item.status}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                >
+                  <option value="waiting">Waiting</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="done">Done</option>
+                  <option value="canceled">Canceled</option>
+                </select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="submit"
+                  className="ml-2"
+                >
+                  Update
+                </Button>
+              </form>
+              <form action={deleteQueueItem}>
+                <input type="hidden" name="id" value={item.id} />
+                <Button size="sm" variant="destructive" type="submit">
+                  Delete
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      ))
+    ) : (
+      <p className="text-sm text-muted-foreground">No queue items yet.</p>
+    );
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -137,55 +194,45 @@ export default async function QueuesPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Current queue</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          {queues?.length ? (
-            queues.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-2 border rounded-md p-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold">{item.customer_name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.vehicle_plate} · {item.services?.name} (
-                      {item.services?.category})
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <form action={updateQueueStatus}>
-                      <input type="hidden" name="id" value={item.id} />
-                      <select
-                        name="status"
-                        defaultValue={item.status}
-                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-                        onChange={(event) => event.currentTarget.form?.requestSubmit()}
-                      >
-                        <option value="waiting">Waiting</option>
-                        <option value="in_progress">In progress</option>
-                        <option value="done">Done</option>
-                        <option value="canceled">Canceled</option>
-                      </select>
-                    </form>
-                    <form action={deleteQueueItem}>
-                      <input type="hidden" name="id" value={item.id} />
-                      <Button size="sm" variant="destructive" type="submit">
-                        Delete
-                      </Button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No queue items yet.</p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>In progress</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              {renderQueueList(inProgress)}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Waiting</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              {renderQueueList(waiting)}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Done</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            {renderQueueList(done)}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Canceled</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            {renderQueueList(canceled)}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
