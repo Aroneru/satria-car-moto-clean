@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { FileText, Download, Calendar, Car, Bike, TrendingUp, TrendingDown } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 

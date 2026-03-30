@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Briefcase, MessageSquare, Image, Users, Phone, TrendingUp, ClipboardList, Wallet, FileText, DollarSign } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 export function DashboardHome() {
   const { services, testimonials, galleryImages, teamMembers, queueItems, transactions } = useContent();

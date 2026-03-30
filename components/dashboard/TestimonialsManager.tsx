@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Star } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 export function TestimonialsManager() {
   const { testimonials, setTestimonials } = useContent();
@@ -34,7 +34,7 @@ export function TestimonialsManager() {
     e.preventDefault();
 
     const testimonialData = {
-      id: editingTestimonial?.id || Date.now().toString(),
+      id: editingTestimonial?.id || crypto.randomUUID(),
       name: formData.name,
       text: formData.text,
       rating: formData.rating,

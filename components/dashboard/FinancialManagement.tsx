@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, TrendingUp, TrendingDown, Wallet, DollarSign } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 export function FinancialManagement() {
   const { transactions, setTransactions } = useContent();
@@ -34,7 +34,7 @@ export function FinancialManagement() {
     e.preventDefault();
 
     const transactionData = {
-      id: editingTransaction?.id || Date.now().toString(),
+      id: editingTransaction?.id || crypto.randomUUID(),
       type: formData.type,
       category: formData.category,
       amount: parseFloat(formData.amount),

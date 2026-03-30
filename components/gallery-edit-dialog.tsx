@@ -15,7 +15,7 @@ interface GalleryItem {
   title: string;
   alt_text: string | null;
   is_visible: boolean;
-  gallery_image_tags: Array<{ gallery_tags: GalleryTag | null }>;
+  gallery_image_tags: Array<{ gallery_tags: GalleryTag | GalleryTag[] | null }>;
 }
 
 export function GalleryEditDialog({
@@ -39,7 +39,7 @@ export function GalleryEditDialog({
 
   const selectedTagIds = new Set(
     item.gallery_image_tags
-      ?.map((t) => t.gallery_tags?.id)
+      ?.map((t) => Array.isArray(t.gallery_tags) ? t.gallery_tags[0]?.id : t.gallery_tags?.id)
       .filter(Boolean) as string[]
   );
 

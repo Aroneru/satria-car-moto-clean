@@ -1,5 +1,8 @@
 "use client";
-import { createContext, useContext, useState, ReactNode } from 'react';
+
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+
+import { createClient } from "@/lib/supabase/client";
 
 interface Service {
   id: string;
@@ -57,12 +60,12 @@ interface QueueItem {
   queueNumber: string;
   customerName: string;
   phoneNumber: string;
-  vehicleType: 'car' | 'motorcycle';
+  vehicleType: "car" | "motorcycle";
   vehiclePlate: string;
   serviceId: string;
   serviceName: string;
   price: number;
-  status: 'waiting' | 'in-progress' | 'completed' | 'cancelled';
+  status: "waiting" | "in-progress" | "completed" | "cancelled";
   createdAt: Date;
   completedAt?: Date;
   notes?: string;
@@ -70,7 +73,7 @@ interface QueueItem {
 
 interface Transaction {
   id: string;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   category: string;
   amount: number;
   description: string;
@@ -93,324 +96,534 @@ interface ContentContextType {
   setQueueItems: (items: QueueItem[]) => void;
   transactions: Transaction[];
   setTransactions: (transactions: Transaction[]) => void;
+  isLoading: boolean;
 }
+
+type ServicePriceKey = keyof Service["priceMatrix"];
+
+const PRICE_KEYS: ServicePriceKey[] = [
+  "small",
+  "medium",
+  "large",
+  "extraLarge",
+  "motorcycleStandard",
+  "motorcycleMoge",
+  "motorcycleExtraLarge",
+];
+
+const defaultContactInfo: ContactInfo = {
+  address: "",
+  phone1: "",
+  phone2: "",
+  email1: "",
+  email2: "",
+  hours: "",
+  facebook: "",
+  instagram: "",
+};
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
-export function ContentProvider({ children }: { children: ReactNode }) {
-  const [services, setServices] = useState<Service[]>([
-    // CAR & MOTORCYCLE WASH
-    {
-      id: '1',
-      icon: 'Droplets',
-      title: 'Cuci Hidrolik',
-      description: 'Layanan cuci mobil dan motor lengkap dengan Body + Kolong + Vacuum untuk hasil bersih maksimal.',
-      features: ['Body wash', 'Kolong cleaning', 'Vacuum interior (mobil)', 'Window cleaning', 'Tire dressing', 'Chain cleaning (motor)'],
-      priceMatrix: {
-        small: 45000,
-        medium: 45000,
-        large: 50000,
-        extraLarge: 60000,
-        motorcycleStandard: 20000,
-        motorcycleMoge: 25000,
-        motorcycleExtraLarge: 30000,
-      },
-      duration: '20-40 menit',
-    },
-    
-    // NANO CERAMIC
-    {
-      id: '3',
-      icon: 'Sparkles',
-      title: 'Nano Keramik',
-      description: 'Pelapisan bodi permanen premium dengan teknologi nano ceramic untuk perlindungan maksimal hingga 2-3 tahun. Memberikan kilap glossy maksimal dan efek hydrophobic.',
-      features: [
-        'Perlindungan cat hingga 2-3 tahun',
-        'Efek hydrophobic (air langsung mengalir)',
-        'Kilap glossy maksimal',
-        'Tahan goresan ringan',
-        'Easy to clean & maintain',
-        'Proteksi dari UV dan oksidasi',
-        'Aplikasi oleh teknisi bersertifikat'
-      ],
-      priceMatrix: {
-        small: 2400000,
-        medium: 2700000,
-        large: 3500000,
-        extraLarge: 4100000,
-        motorcycleStandard: 550000,
-        motorcycleMoge: 550000,
-        motorcycleExtraLarge: 700000,
-      },
-      duration: '3-6 jam',
-    },
-    
-    // POLISH
-    {
-      id: '5',
-      icon: 'Car',
-      title: 'Polish Mobil',
-      description: 'Polish bodi dan perlindungan cat untuk menghilangkan goresan halus dan mengembalikan kilap mobil Anda.',
-      features: [
-        'Polish bodi menyeluruh',
-        'Perlindungan cat',
-        'Menghilangkan goresan halus',
-        'Mengembalikan kilap original',
-        'Wax protection'
-      ],
-      priceMatrix: {
-        small: 800000,
-        medium: 900000,
-        large: 1000000,
-        extraLarge: 1100000,
-      },
-      duration: '3-4 jam',
-    },
-    {
-      id: '6',
-      icon: 'Sparkles',
-      title: 'Polish Kaca - Full Coating + Nano',
-      description: 'Polish kaca mobil lengkap dengan jamur removal, full coating, dan nano protection untuk visibilitas maksimal.',
-      features: [
-        'Pembersihan jamur kaca',
-        'Polish kaca menyeluruh',
-        'Full coating protection',
-        'Nano hydrophobic layer',
-        'Visibilitas maksimal'
-      ],
-      priceMatrix: {
-        small: 650000,
-        medium: 650000,
-        large: 650000,
-        extraLarge: 650000,
-      },
-      duration: '2-3 jam',
-    },
-    {
-      id: '7',
-      icon: 'Car',
-      title: 'Polish Kaca - Full Coating',
-      description: 'Polish kaca mobil dengan jamur removal dan full coating protection.',
-      features: [
-        'Pembersihan jamur kaca',
-        'Polish kaca menyeluruh',
-        'Full coating protection',
-        'Hasil jernih maksimal'
-      ],
-      priceMatrix: {
-        small: 250000,
-        medium: 250000,
-        large: 250000,
-        extraLarge: 250000,
-      },
-      duration: '1-2 jam',
-    },
-    
-    // HEAD LAMP
-    {
-      id: '8',
-      icon: 'Lightbulb',
-      title: 'Head Lamp - Coating',
-      description: 'Pembersihan lampu kusam dengan coating protection untuk hasil tahan lama dan perlindungan dari oksidasi.',
-      features: [
-        'Pembersihan lampu kusam',
-        'Polishing headlamp',
-        'UV protection coating',
-        'Hasil jernih maksimal',
-        'Tahan lama'
-      ],
-      priceMatrix: {
-        small: 550000,
-        medium: 550000,
-        large: 550000,
-        extraLarge: 550000,
-        motorcycleStandard: 550000,
-        motorcycleMoge: 550000,
-        motorcycleExtraLarge: 550000,
-      },
-      duration: '1-2 jam',
-    },
-    {
-      id: '9',
-      icon: 'Lightbulb',
-      title: 'Head Lamp - Non Coating',
-      description: 'Pembersihan dan polishing lampu kusam untuk mengembalikan kejernihan lampu kendaraan Anda.',
-      features: [
-        'Pembersihan lampu kusam',
-        'Polishing headlamp',
-        'Hasil jernih',
-        'Menghilangkan buram'
-      ],
-      priceMatrix: {
-        small: 350000,
-        medium: 350000,
-        large: 350000,
-        extraLarge: 350000,
-        motorcycleStandard: 350000,
-        motorcycleMoge: 350000,
-        motorcycleExtraLarge: 350000,
-      },
-      duration: '1 jam',
-    },
-    
-    // OTHER SERVICES
-    {
-      id: '10',
-      icon: 'Armchair',
-      title: 'Detailing Interior',
-      description: 'Pembersihan interior menyeluruh dan detailing untuk hasil seperti baru.',
-      features: [
-        'Deep cleaning interior',
-        'Leather/fabric treatment',
-        'Dashboard detailing',
-        'Door panel cleaning',
-        'Carpet shampooing',
-        'Air freshener'
-      ],
-      priceMatrix: {
-        small: 600000,
-        medium: 600000,
-        large: 600000,
-        extraLarge: 600000,
-      },
-      duration: '2-3 jam',
-    },
-    {
-      id: '11',
-      icon: 'Wrench',
-      title: 'Engine Cleaning',
-      description: 'Pembersihan mesin profesional untuk performa optimal dan tampilan mesin yang bersih.',
-      features: [
-        'Deep cleaning mesin',
-        'Degreasing',
-        'Protection coating',
-        'Aman untuk komponen elektronik'
-      ],
-      priceMatrix: {
-        small: 200000,
-        medium: 200000,
-        large: 200000,
-        extraLarge: 200000,
-        motorcycleStandard: 200000,
-        motorcycleMoge: 200000,
-        motorcycleExtraLarge: 200000,
-      },
-      duration: '1-1.5 jam',
-    },
-  ]);
+function normalizeStatus(status: string): QueueItem["status"] {
+  if (status === "in_progress") return "in-progress";
+  if (status === "done") return "completed";
+  if (status === "canceled") return "cancelled";
+  if (status === "in-progress" || status === "completed" || status === "cancelled") return status;
+  return "waiting";
+}
 
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([
-    {
-      id: '1',
-      name: 'Budi Santoso',
-      text: 'Excellent service! My car looks brand new. Highly recommended!',
-      rating: 5,
-    },
-    {
-      id: '2',
-      name: 'Rina Wijaya',
-      text: 'Professional and fast. The team is very friendly and thorough.',
-      rating: 5,
-    },
-    {
-      id: '3',
-      name: 'Ahmad Rizki',
-      text: 'Best car wash in Ciomas. Great value for money!',
-      rating: 5,
-    },
-  ]);
-
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([
-    {
-      id: '1',
-      url: 'https://images.unsplash.com/photo-1552930294-6b595f4c2974?w=1080',
-      title: 'Professional Car Washing',
-      category: 'Service',
-    },
-    {
-      id: '2',
-      url: 'https://images.unsplash.com/photo-1587350811385-f9bd58daf9e9?w=1080',
-      title: 'Showroom Finish',
-      category: 'Results',
-    },
-    {
-      id: '3',
-      url: 'https://images.unsplash.com/photo-1762418916717-5a3327d76731?w=1080',
-      title: 'Motorcycle Care',
-      category: 'Service',
-    },
-  ]);
-
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: '1',
-      name: 'Satria Wijaya',
-      role: 'Founder & CEO',
-      description: '10+ years experience in automotive care',
-    },
-    {
-      id: '2',
-      name: 'Dedi Kusuma',
-      role: 'Operations Manager',
-      description: 'Certified detailing specialist',
-    },
-    {
-      id: '3',
-      name: 'Rina Sari',
-      role: 'Customer Service Lead',
-      description: 'Dedicated to customer satisfaction',
-    },
-    {
-      id: '4',
-      name: 'Ahmad Rizal',
-      role: 'Lead Technician',
-      description: 'Expert in premium detailing',
-    },
-  ]);
-
-  const [contactInfo, setContactInfo] = useState<ContactInfo>({
-    address: 'Jl. Raya Ciomas No. 123\nCiomas, Bogor\nWest Java, Indonesia 16610',
-    phone1: '+62 812-3456-7890',
-    phone2: '+62 821-9876-5432',
-    email1: 'info@satriaclean.com',
-    email2: 'booking@satriaclean.com',
-    hours: 'Monday - Saturday: 08:00 - 18:00\nSunday: 09:00 - 15:00',
-    facebook: '#',
-    instagram: '#',
-  });
-
-  const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
-
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  return (
-    <ContentContext.Provider
-      value={{
-        services,
-        setServices,
-        testimonials,
-        setTestimonials,
-        galleryImages,
-        setGalleryImages,
-        teamMembers,
-        setTeamMembers,
-        contactInfo,
-        setContactInfo,
-        queueItems,
-        setQueueItems,
-        transactions,
-        setTransactions,
-      }}
-    >
-      {children}
-    </ContentContext.Provider>
+function inferServiceCategory(priceMatrix: Service["priceMatrix"]): "car" | "bike" | "both" {
+  const hasCar = Boolean(
+    priceMatrix.small ?? priceMatrix.medium ?? priceMatrix.large ?? priceMatrix.extraLarge,
   );
+  const hasBike = Boolean(
+    priceMatrix.motorcycleStandard ?? priceMatrix.motorcycleMoge ?? priceMatrix.motorcycleExtraLarge,
+  );
+
+  if (hasCar && hasBike) return "both";
+  if (hasBike) return "bike";
+  return "car";
+}
+
+function priceMatrixToRows(serviceId: string, matrix: Service["priceMatrix"]) {
+  return PRICE_KEYS.filter((key) => matrix[key] !== undefined).map((key) => ({
+    id: crypto.randomUUID(),
+    service_id: serviceId,
+    size_key: key,
+    amount: Number(matrix[key] ?? 0),
+  }));
+}
+
+function parseDurationMinutes(duration: string): number {
+  const match = duration.match(/\d+/);
+  return match ? Number(match[0]) : 0;
+}
+
+export function ContentProvider({ children }: { children: ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [services, setServicesState] = useState<Service[]>([]);
+  const [testimonials, setTestimonialsState] = useState<Testimonial[]>([]);
+  const [galleryImages, setGalleryImagesState] = useState<GalleryImage[]>([]);
+  const [teamMembers, setTeamMembersState] = useState<TeamMember[]>([]);
+  const [contactInfo, setContactInfoState] = useState<ContactInfo>(defaultContactInfo);
+  const [queueItems, setQueueItemsState] = useState<QueueItem[]>([]);
+  const [transactions, setTransactionsState] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAll = async () => {
+      const supabase = createClient();
+
+      const [
+        servicesRes,
+        testimonialsRes,
+        galleryRes,
+        teamRes,
+        contactRes,
+        queuesRes,
+        transactionsRes,
+      ] = await Promise.all([
+        supabase
+          .from("services")
+          .select(
+            "id, name, title, description, features, duration_label, duration_minutes, service_prices (size_key, amount)",
+          )
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("testimonials")
+          .select("id, name, text, rating")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("gallery_images")
+          .select("id, image_url, title, category")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("team_members")
+          .select("id, name, role, description, photo_url")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("contact_info")
+          .select("address, phone1, phone2, email1, email2, hours, facebook, instagram")
+          .eq("id", true)
+          .maybeSingle(),
+        supabase
+          .from("queues")
+          .select(
+            "id, queue_number, customer_name, phone_number, vehicle_type, vehicle_plate, service_id, service_name, price, status, queued_at, completed_at, notes",
+          )
+          .order("queued_at", { ascending: false }),
+        supabase
+          .from("transactions")
+          .select("id, type, category, amount, description, transaction_at, queue_id")
+          .order("transaction_at", { ascending: false }),
+      ]);
+
+      if (!mounted) {
+        return;
+      }
+
+      if (servicesRes.error) console.error("Failed to load services", servicesRes.error.message);
+      if (testimonialsRes.error) console.error("Failed to load testimonials", testimonialsRes.error.message);
+      if (galleryRes.error) console.error("Failed to load gallery", galleryRes.error.message);
+      if (teamRes.error) console.error("Failed to load team", teamRes.error.message);
+      if (contactRes.error) console.error("Failed to load contact", contactRes.error.message);
+      if (queuesRes.error) console.error("Failed to load queues", queuesRes.error.message);
+      if (transactionsRes.error) console.error("Failed to load transactions", transactionsRes.error.message);
+
+      const mappedServices: Service[] = (servicesRes.data ?? []).map((service) => {
+        const priceMatrix: Service["priceMatrix"] = {};
+        const rows = Array.isArray(service.service_prices)
+          ? (service.service_prices as Array<{ size_key: ServicePriceKey; amount: number }> )
+          : [];
+
+        rows.forEach((row) => {
+          priceMatrix[row.size_key] = Number(row.amount);
+        });
+
+        return {
+          id: service.id,
+          icon: "Briefcase",
+          title: service.title || service.name || "Untitled Service",
+          description: service.description ?? "",
+          features: Array.isArray(service.features) ? service.features : [],
+          priceMatrix,
+          duration:
+            service.duration_label ||
+            (service.duration_minutes && service.duration_minutes > 0
+              ? `${service.duration_minutes} minutes`
+              : "0 minutes"),
+        };
+      });
+
+      const mappedTestimonials: Testimonial[] = (testimonialsRes.data ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        text: row.text,
+        rating: Number(row.rating),
+      }));
+
+      const mappedGallery: GalleryImage[] = (galleryRes.data ?? []).map((row) => ({
+        id: row.id,
+        url: row.image_url,
+        title: row.title,
+        category: row.category ?? "Service",
+      }));
+
+      const mappedTeam: TeamMember[] = (teamRes.data ?? []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        role: row.role,
+        description: row.description,
+        photo: row.photo_url ?? undefined,
+      }));
+
+      const mappedQueues: QueueItem[] = (queuesRes.data ?? []).map((row) => ({
+        id: row.id,
+        queueNumber: row.queue_number,
+        customerName: row.customer_name,
+        phoneNumber: row.phone_number ?? "",
+        vehicleType: row.vehicle_type === "motorcycle" ? "motorcycle" : "car",
+        vehiclePlate: row.vehicle_plate,
+        serviceId: row.service_id ?? "",
+        serviceName: row.service_name ?? "",
+        price: Number(row.price ?? 0),
+        status: normalizeStatus(row.status),
+        createdAt: new Date(row.queued_at),
+        completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+        notes: row.notes ?? "",
+      }));
+
+      const mappedTransactions: Transaction[] = (transactionsRes.data ?? []).map((row) => ({
+        id: row.id,
+        type: row.type as Transaction["type"],
+        category: row.category,
+        amount: Number(row.amount),
+        description: row.description,
+        date: new Date(row.transaction_at),
+        queueId: row.queue_id ?? undefined,
+      }));
+
+      setServicesState(mappedServices);
+      setTestimonialsState(mappedTestimonials);
+      setGalleryImagesState(mappedGallery);
+      setTeamMembersState(mappedTeam);
+      setContactInfoState(contactRes.data ?? defaultContactInfo);
+      setQueueItemsState(mappedQueues);
+      setTransactionsState(mappedTransactions);
+      setIsLoading(false);
+    };
+
+    void loadAll();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const setServices = (next: Service[]) => {
+    const previous = services;
+    setServicesState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      const upsertRows = next.map((service, index) => {
+        const prices = PRICE_KEYS.map((key) => service.priceMatrix[key]).filter(
+          (amount): amount is number => amount !== undefined,
+        );
+        const fallbackPrice = prices.length > 0 ? Math.min(...prices) : 0;
+
+        return {
+          id: service.id,
+          name: service.title,
+          title: service.title,
+          category: inferServiceCategory(service.priceMatrix),
+          description: service.description,
+          features: service.features,
+          price: fallbackPrice,
+          duration_minutes: parseDurationMinutes(service.duration),
+          duration_label: service.duration,
+          is_active: true,
+          sort_order: index,
+        };
+      });
+
+      if (upsertRows.length > 0) {
+        const { error } = await supabase.from("services").upsert(upsertRows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert services", error.message);
+      }
+
+      for (const service of next) {
+        const { error: deletePriceError } = await supabase
+          .from("service_prices")
+          .delete()
+          .eq("service_id", service.id);
+
+        if (deletePriceError) {
+          console.error("Failed to clear service prices", deletePriceError.message);
+          continue;
+        }
+
+        const priceRows = priceMatrixToRows(service.id, service.priceMatrix);
+        if (priceRows.length > 0) {
+          const { error: insertPriceError } = await supabase
+            .from("service_prices")
+            .insert(priceRows);
+
+          if (insertPriceError) {
+            console.error("Failed to save service prices", insertPriceError.message);
+          }
+        }
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("services").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete services", error.message);
+      }
+    })();
+  };
+
+  const setTestimonials = (next: Testimonial[]) => {
+    const previous = testimonials;
+    setTestimonialsState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      if (next.length > 0) {
+        const rows = next.map((item, index) => ({
+          id: item.id,
+          name: item.name,
+          text: item.text,
+          rating: item.rating,
+          sort_order: index,
+          is_visible: true,
+        }));
+
+        const { error } = await supabase.from("testimonials").upsert(rows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert testimonials", error.message);
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("testimonials").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete testimonials", error.message);
+      }
+    })();
+  };
+
+  const setGalleryImages = (next: GalleryImage[]) => {
+    const previous = galleryImages;
+    setGalleryImagesState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      if (next.length > 0) {
+        const rows = next.map((item, index) => ({
+          id: item.id,
+          image_url: item.url,
+          title: item.title,
+          category: item.category,
+          sort_order: index,
+          is_visible: true,
+        }));
+
+        const { error } = await supabase.from("gallery_images").upsert(rows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert gallery", error.message);
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("gallery_images").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete gallery images", error.message);
+      }
+    })();
+  };
+
+  const setTeamMembers = (next: TeamMember[]) => {
+    const previous = teamMembers;
+    setTeamMembersState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      if (next.length > 0) {
+        const rows = next.map((item, index) => ({
+          id: item.id,
+          name: item.name,
+          role: item.role,
+          description: item.description,
+          photo_url: item.photo ?? null,
+          sort_order: index,
+          is_active: true,
+        }));
+
+        const { error } = await supabase.from("team_members").upsert(rows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert team members", error.message);
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("team_members").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete team members", error.message);
+      }
+    })();
+  };
+
+  const setContactInfo = (next: ContactInfo) => {
+    setContactInfoState(next);
+
+    void (async () => {
+      const supabase = createClient();
+      const { error } = await supabase.from("contact_info").upsert(
+        {
+          id: true,
+          address: next.address,
+          phone1: next.phone1,
+          phone2: next.phone2 || null,
+          email1: next.email1,
+          email2: next.email2 || null,
+          hours: next.hours,
+          facebook: next.facebook || null,
+          instagram: next.instagram || null,
+        },
+        { onConflict: "id" },
+      );
+
+      if (error) console.error("Failed to save contact info", error.message);
+    })();
+  };
+
+  const setQueueItems = (next: QueueItem[]) => {
+    const previous = queueItems;
+    setQueueItemsState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      if (next.length > 0) {
+        const rows = next.map((item) => ({
+          id: item.id,
+          queue_number: item.queueNumber,
+          customer_name: item.customerName,
+          phone_number: item.phoneNumber || null,
+          vehicle_type: item.vehicleType,
+          vehicle_plate: item.vehiclePlate,
+          service_id: item.serviceId || null,
+          service_name: item.serviceName || null,
+          price: item.price,
+          status: item.status,
+          queued_at: item.createdAt.toISOString(),
+          completed_at: item.completedAt ? item.completedAt.toISOString() : null,
+          notes: item.notes || null,
+        }));
+
+        const { error } = await supabase.from("queues").upsert(rows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert queues", error.message);
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("queues").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete queues", error.message);
+      }
+    })();
+  };
+
+  const setTransactions = (next: Transaction[]) => {
+    const previous = transactions;
+    setTransactionsState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      if (next.length > 0) {
+        const rows = next.map((item) => ({
+          id: item.id,
+          type: item.type,
+          category: item.category,
+          amount: item.amount,
+          description: item.description,
+          transaction_at: item.date.toISOString(),
+          queue_id: item.queueId || null,
+        }));
+
+        const { error } = await supabase.from("transactions").upsert(rows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert transactions", error.message);
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("transactions").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete transactions", error.message);
+      }
+    })();
+  };
+
+  const value = useMemo<ContentContextType>(
+    () => ({
+      services,
+      setServices,
+      testimonials,
+      setTestimonials,
+      galleryImages,
+      setGalleryImages,
+      teamMembers,
+      setTeamMembers,
+      contactInfo,
+      setContactInfo,
+      queueItems,
+      setQueueItems,
+      transactions,
+      setTransactions,
+      isLoading,
+    }),
+    [
+      services,
+      testimonials,
+      galleryImages,
+      teamMembers,
+      contactInfo,
+      queueItems,
+      transactions,
+      isLoading,
+    ],
+  );
+
+  return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
 }
 
 export function useContent() {
   const context = useContext(ContentContext);
   if (context === undefined) {
-    throw new Error('useContent must be used within a ContentProvider');
+    throw new Error("useContent must be used within a ContentProvider");
   }
   return context;
 }

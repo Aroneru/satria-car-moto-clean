@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 export function GalleryManager() {
   const { galleryImages, setGalleryImages } = useContent();
@@ -36,7 +36,7 @@ export function GalleryManager() {
     e.preventDefault();
 
     const imageData = {
-      id: editingImage?.id || Date.now().toString(),
+      id: editingImage?.id || crypto.randomUUID(),
       url: formData.url,
       title: formData.title,
       category: formData.category,

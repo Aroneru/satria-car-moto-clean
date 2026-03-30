@@ -6,6 +6,25 @@ import { useContent } from '../../context/ContentContext';
 export function Home() {
   const { services, testimonials } = useContent();
 
+  const getServicePriceLabel = (service: (typeof services)[number]) => {
+    const prices = Object.values(service.priceMatrix).filter(
+      (value): value is number => typeof value === 'number' && Number.isFinite(value),
+    );
+
+    if (prices.length === 0) {
+      return 'Contact us';
+    }
+
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+
+    if (min === max) {
+      return `Rp ${min.toLocaleString('id-ID')}`;
+    }
+
+    return `Rp ${min.toLocaleString('id-ID')} - Rp ${max.toLocaleString('id-ID')}`;
+  };
+
   const advantages = [
     {
       icon: <Droplet className="w-8 h-8" />,
@@ -156,7 +175,7 @@ export function Home() {
                 </h3>
                 <p className="text-gray-300 mb-4">{service.description}</p>
                 <p className="text-xl font-semibold text-[#6797BF]">
-                  {service.price}
+                  {getServicePriceLabel(service)}
                 </p>
               </div>
             ))}

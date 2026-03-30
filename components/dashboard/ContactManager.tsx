@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Save } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 export function ContactManager() {
   const { contactInfo, setContactInfo } = useContent();

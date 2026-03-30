@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Car, Bike, Search, Plus, Edit2, Trash2, Clock, CheckCircle, XCircle, Play, ArrowLeft } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 // Vehicle model database for auto-detection
 const vehicleDatabase = {
@@ -117,7 +117,7 @@ export function QueueManagement() {
       const price = getServicePrice(service);
 
       const queueData = {
-        id: Date.now().toString() + Math.random(),
+        id: crypto.randomUUID(),
         queueNumber: getQueueNumber(),
         customerName,
         phoneNumber,
@@ -187,7 +187,7 @@ export function QueueManagement() {
     // If completed, create income transaction
     if (newStatus === 'completed' && queue.status !== 'completed') {
       const transaction = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         type: 'income' as const,
         category: 'Service Payment',
         amount: queue.price,

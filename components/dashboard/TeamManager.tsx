@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, User, Upload } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 import { ImageWithFallback } from '../sections/figma/ImageWithFallback';
 
 export function TeamManager() {
@@ -61,7 +61,7 @@ export function TeamManager() {
     e.preventDefault();
 
     const memberData = {
-      id: editingMember?.id || Date.now().toString(),
+      id: editingMember?.id || crypto.randomUUID(),
       name: formData.name,
       role: formData.role,
       description: formData.description,

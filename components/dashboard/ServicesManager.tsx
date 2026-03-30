@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Car, Bike } from 'lucide-react';
-import { useContent } from '../../context/ContentContext';
+import { useContent } from '@/context/ContentContext';
 
 export function ServicesManager() {
   const { services, setServices } = useContent();
@@ -51,7 +51,7 @@ export function ServicesManager() {
     e.preventDefault();
 
     const serviceData = {
-      id: editingService?.id || Date.now().toString(),
+      id: editingService?.id || crypto.randomUUID(),
       icon: 'Briefcase',
       title: formData.title,
       description: formData.description,
