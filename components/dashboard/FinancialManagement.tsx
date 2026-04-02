@@ -193,7 +193,7 @@ export function FinancialManagement() {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black autofill:bg-gray-200 autofill:text-black"
           >
             <option value="all">All Types</option>
             <option value="income">Income</option>
@@ -203,7 +203,7 @@ export function FinancialManagement() {
           <select
             value={filterPeriod}
             onChange={(e) => setFilterPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black autofill:bg-gray-200 autofill:text-black"
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -321,7 +321,7 @@ export function FinancialManagement() {
                       category: '',
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black autofill:bg-gray-200 autofill:text-black"
                 >
                   <option value="expense">Expense</option>
                   <option value="income">Income</option>
@@ -334,7 +334,7 @@ export function FinancialManagement() {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black autofill:bg-gray-200 autofill:text-black"
                 >
                   <option value="">Select Category</option>
                   {(formData.type === 'expense' ? expenseCategories : incomeCategories).map((cat) => (
@@ -354,7 +354,7 @@ export function FinancialManagement() {
                   required
                   min="0"
                   step="1000"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                   placeholder="50000"
                 />
               </div>
@@ -366,7 +366,7 @@ export function FinancialManagement() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                   placeholder="Transaction details..."
                 />
               </div>
@@ -378,7 +378,7 @@ export function FinancialManagement() {
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                 />
               </div>
 

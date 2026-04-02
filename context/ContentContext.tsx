@@ -27,6 +27,9 @@ interface Testimonial {
   name: string;
   text: string;
   rating: number;
+  avatar?: string;
+  date?: string;
+  source: "google" | "manual";
 }
 
 interface GalleryImage {
@@ -44,6 +47,28 @@ interface TeamMember {
   photo?: string;
 }
 
+interface JourneyEntry {
+  id: string;
+  year: string;
+  title: string;
+  description: string;
+}
+
+interface AuditLog {
+  id: string;
+  timestamp: Date;
+  userName: string;
+  userRole: "Admin" | "Owner";
+  action: string;
+  module: string;
+  details?: string;
+}
+
+interface SocialLink {
+  platform: "facebook" | "instagram" | "tiktok" | "youtube" | "whatsapp";
+  url: string;
+}
+
 interface ContactInfo {
   address: string;
   phone1: string;
@@ -51,8 +76,7 @@ interface ContactInfo {
   email1: string;
   email2: string;
   hours: string;
-  facebook: string;
-  instagram: string;
+  socialLinks: SocialLink[];
 }
 
 interface QueueItem {
@@ -96,6 +120,12 @@ interface ContentContextType {
   setQueueItems: (items: QueueItem[]) => void;
   transactions: Transaction[];
   setTransactions: (transactions: Transaction[]) => void;
+  featuredServiceIds: string[];
+  setFeaturedServiceIds: (ids: string[]) => void;
+  journeyEntries: JourneyEntry[];
+  setJourneyEntries: (entries: JourneyEntry[]) => void;
+  auditLogs: AuditLog[];
+  addAuditLog: (log: Omit<AuditLog, "id" | "timestamp">) => void;
   isLoading: boolean;
 }
 
@@ -118,8 +148,7 @@ const defaultContactInfo: ContactInfo = {
   email1: "",
   email2: "",
   hours: "",
-  facebook: "",
-  instagram: "",
+  socialLinks: [],
 };
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -169,6 +198,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [contactInfo, setContactInfoState] = useState<ContactInfo>(defaultContactInfo);
   const [queueItems, setQueueItemsState] = useState<QueueItem[]>([]);
   const [transactions, setTransactionsState] = useState<Transaction[]>([]);
+  const [featuredServiceIds, setFeaturedServiceIds] = useState<string[]>([]);
+  const [journeyEntries, setJourneyEntriesState] = useState<JourneyEntry[]>([]);
+  const [auditLogs, setAuditLogsState] = useState<AuditLog[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -184,6 +216,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         contactRes,
         queuesRes,
         transactionsRes,
+        journeyRes,
+        auditRes,
       ] = await Promise.all([
         supabase
           .from("services")
@@ -195,7 +229,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           .order("created_at", { ascending: true }),
         supabase
           .from("testimonials")
-          .select("id, name, text, rating")
+          .select("id, name, text, rating, avatar, date, source")
           .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true }),
         supabase
@@ -210,7 +244,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           .order("created_at", { ascending: true }),
         supabase
           .from("contact_info")
-          .select("address, phone1, phone2, email1, email2, hours, facebook, instagram")
+          .select("address, phone1, phone2, email1, email2, hours, social_links")
           .eq("id", true)
           .maybeSingle(),
         supabase
@@ -223,6 +257,15 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           .from("transactions")
           .select("id, type, category, amount, description, transaction_at, queue_id")
           .order("transaction_at", { ascending: false }),
+        supabase
+          .from("journey_entries")
+          .select("id, year, title, description")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("audit_logs")
+          .select("id, user_name, user_role, action, module, details, created_at")
+          .order("created_at", { ascending: false }),
       ]);
 
       if (!mounted) {
@@ -236,6 +279,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       if (contactRes.error) console.error("Failed to load contact", contactRes.error.message);
       if (queuesRes.error) console.error("Failed to load queues", queuesRes.error.message);
       if (transactionsRes.error) console.error("Failed to load transactions", transactionsRes.error.message);
+      if (journeyRes.error) console.error("Failed to load journey entries", journeyRes.error.message);
+      if (auditRes.error) console.error("Failed to load audit logs", auditRes.error.message);
 
       const mappedServices: Service[] = (servicesRes.data ?? []).map((service) => {
         const priceMatrix: Service["priceMatrix"] = {};
@@ -267,6 +312,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         name: row.name,
         text: row.text,
         rating: Number(row.rating),
+        avatar: row.avatar ?? undefined,
+        date: row.date ?? undefined,
+        source: row.source ?? "manual",
       }));
 
       const mappedGallery: GalleryImage[] = (galleryRes.data ?? []).map((row) => ({
@@ -310,13 +358,48 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         queueId: row.queue_id ?? undefined,
       }));
 
+      const mappedJourneyEntries: JourneyEntry[] = (journeyRes.data ?? []).map((row) => ({
+        id: row.id,
+        year: row.year,
+        title: row.title,
+        description: row.description,
+      }));
+
+      const mappedAuditLogs: AuditLog[] = (auditRes.data ?? []).map((row) => ({
+        id: row.id,
+        timestamp: new Date(row.created_at),
+        userName: row.user_name,
+        userRole: row.user_role as AuditLog["userRole"],
+        action: row.action,
+        module: row.module,
+        details: row.details ?? undefined,
+      }));
+
       setServicesState(mappedServices);
       setTestimonialsState(mappedTestimonials);
       setGalleryImagesState(mappedGallery);
       setTeamMembersState(mappedTeam);
-      setContactInfoState(contactRes.data ?? defaultContactInfo);
+      
+      // Parse contact info with social links
+      const mappedContactInfo: ContactInfo = contactRes.data 
+        ? {
+            address: contactRes.data.address ?? "",
+            phone1: contactRes.data.phone1 ?? "",
+            phone2: contactRes.data.phone2 ?? "",
+            email1: contactRes.data.email1 ?? "",
+            email2: contactRes.data.email2 ?? "",
+            hours: contactRes.data.hours ?? "",
+            socialLinks: Array.isArray(contactRes.data.social_links)
+              ? contactRes.data.social_links
+              : [],
+          }
+        : defaultContactInfo;
+      
+      setContactInfoState(mappedContactInfo);
       setQueueItemsState(mappedQueues);
       setTransactionsState(mappedTransactions);
+      setJourneyEntriesState(mappedJourneyEntries);
+      setAuditLogsState(mappedAuditLogs);
       setIsLoading(false);
     };
 
@@ -407,6 +490,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           name: item.name,
           text: item.text,
           rating: item.rating,
+          avatar: item.avatar ?? null,
+          date: item.date ?? null,
+          source: item.source ?? "manual",
           sort_order: index,
           is_visible: true,
         }));
@@ -505,8 +591,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           email1: next.email1,
           email2: next.email2 || null,
           hours: next.hours,
-          facebook: next.facebook || null,
-          instagram: next.instagram || null,
+          social_links: next.socialLinks,
         },
         { onConflict: "id" },
       );
@@ -587,6 +672,61 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     })();
   };
 
+  const setJourneyEntries = (next: JourneyEntry[]) => {
+    const previous = journeyEntries;
+    setJourneyEntriesState(next);
+
+    void (async () => {
+      const supabase = createClient();
+
+      if (next.length > 0) {
+        const rows = next.map((item, index) => ({
+          id: item.id,
+          year: item.year,
+          title: item.title,
+          description: item.description,
+          sort_order: index,
+        }));
+
+        const { error } = await supabase.from("journey_entries").upsert(rows, { onConflict: "id" });
+        if (error) console.error("Failed to upsert journey entries", error.message);
+      }
+
+      const removedIds = previous
+        .map((item) => item.id)
+        .filter((id) => !next.some((item) => item.id === id));
+
+      if (removedIds.length > 0) {
+        const { error } = await supabase.from("journey_entries").delete().in("id", removedIds);
+        if (error) console.error("Failed to delete journey entries", error.message);
+      }
+    })();
+  };
+
+  const addAuditLog = (log: Omit<AuditLog, "id" | "timestamp">) => {
+    const newLog: AuditLog = {
+      ...log,
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
+    };
+    setAuditLogsState((prev) => [newLog, ...prev]);
+
+    void (async () => {
+      const supabase = createClient();
+      const { error } = await supabase.from("audit_logs").insert({
+        id: newLog.id,
+        user_name: newLog.userName,
+        user_role: newLog.userRole,
+        action: newLog.action,
+        module: newLog.module,
+        details: newLog.details || null,
+        created_at: newLog.timestamp.toISOString(),
+      });
+
+      if (error) console.error("Failed to insert audit log", error.message);
+    })();
+  };
+
   const value = useMemo<ContentContextType>(
     () => ({
       services,
@@ -603,6 +743,12 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setQueueItems,
       transactions,
       setTransactions,
+      featuredServiceIds,
+      setFeaturedServiceIds,
+      journeyEntries,
+      setJourneyEntries,
+      auditLogs,
+      addAuditLog,
       isLoading,
     }),
     [
@@ -613,6 +759,9 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       contactInfo,
       queueItems,
       transactions,
+      featuredServiceIds,
+      journeyEntries,
+      auditLogs,
       isLoading,
     ],
   );

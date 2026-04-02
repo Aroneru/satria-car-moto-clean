@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { ContentProvider } from '../../context/ContentContext';
 import { Navigation } from './Navigation';
 import { Home } from './Home';
 import { About } from './About';
@@ -24,11 +23,9 @@ export function Website() {
   };
 
   return (
-    <ContentProvider>
-      <div className="min-h-screen bg-white">
-        <Navigation activePage={activePage} setActivePage={setActivePage} />
-        <main>{renderPage()}</main>
-      </div>
-    </ContentProvider>
+    <div className="min-h-screen bg-white">
+      <Navigation activePage={activePage} setActivePage={setActivePage} />
+      <main>{renderPage()}</main>
+    </div>
   );
 }

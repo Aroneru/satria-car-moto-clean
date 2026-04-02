@@ -156,7 +156,7 @@ export function TeamManager() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                   placeholder="e.g., Satria Wijaya"
                 />
               </div>
@@ -170,7 +170,7 @@ export function TeamManager() {
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                   placeholder="e.g., Founder & CEO"
                 />
               </div>
@@ -184,7 +184,7 @@ export function TeamManager() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                   placeholder="Brief description or expertise"
                 />
               </div>

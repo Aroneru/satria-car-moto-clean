@@ -492,7 +492,7 @@ export function QueueManagement() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-4 focus:ring-[#FCDE04] focus:ring-opacity-20 text-lg"
+                className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-4 focus:ring-[#FCDE04] focus:ring-opacity-20 text-lg bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
                 placeholder={vehicleType === 'car' ? 'e.g., Pajero, Jazz, Alphard...' : 'e.g., Beat, NMAX, Harley...'}
               />
             </div>
@@ -609,7 +609,7 @@ export function QueueManagement() {
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               required
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
               placeholder="Enter name"
             />
           </div>
@@ -623,7 +623,7 @@ export function QueueManagement() {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               required
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
               placeholder="+62 812-3456-7890"
             />
           </div>
@@ -647,7 +647,7 @@ export function QueueManagement() {
               value={vehiclePlate}
               onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
               required
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] font-bold text-center text-lg"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] font-bold text-center text-lg bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
               placeholder="F 1234 ABC"
             />
           </div>

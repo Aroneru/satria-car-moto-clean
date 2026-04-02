@@ -234,7 +234,7 @@ export function Reports() {
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black placeholder-gray-500 autofill:bg-gray-200 autofill:text-black"
             />
           </div>
 
@@ -245,7 +245,7 @@ export function Reports() {
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value as 'summary' | 'detailed')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-gray-200 text-black autofill:bg-gray-200 autofill:text-black"
             >
               <option value="summary">Summary Report</option>
               <option value="detailed">Detailed Report</option>
