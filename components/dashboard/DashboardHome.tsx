@@ -90,21 +90,21 @@ export function DashboardHome() {
         <div className="grid md:grid-cols-3 gap-4">
           <Link
             href="/dashboard/services"
-            className="p-4 border-2 border-[#FCDE04] rounded-lg hover:bg-[#FCDE04] hover:text-[#1D1D1D] transition-colors text-center"
+            className="p-4 border-2 border-[#FCDE04] rounded-lg text-[#1D1D1D] hover:bg-[#FCDE04] transition-colors text-center"
           >
             <Briefcase className="w-8 h-8 mx-auto mb-2" />
             <p className="font-semibold">Manage Services</p>
           </Link>
           <Link
             href="/dashboard/gallery"
-            className="p-4 border-2 border-[#6797BF] rounded-lg hover:bg-[#6797BF] hover:text-white transition-colors text-center"
+            className="p-4 border-2 border-[#6797BF] rounded-lg text-[#1D1D1D] hover:bg-[#6797BF] hover:text-white transition-colors text-center"
           >
             <Image className="w-8 h-8 mx-auto mb-2" />
             <p className="font-semibold">Update Gallery</p>
           </Link>
           <Link
             href="/dashboard/contact"
-            className="p-4 border-2 border-green-500 rounded-lg hover:bg-green-500 hover:text-white transition-colors text-center"
+            className="p-4 border-2 border-green-500 rounded-lg text-[#1D1D1D] hover:bg-green-500 hover:text-white transition-colors text-center"
           >
             <Phone className="w-8 h-8 mx-auto mb-2" />
             <p className="font-semibold">Edit Contact Info</p>

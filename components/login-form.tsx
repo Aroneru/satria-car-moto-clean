@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 export function LoginForm({
   className,
@@ -48,63 +49,123 @@ export function LoginForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+    <div className={cn("fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 flex items-center justify-center", className)} {...props}>
+      <div className="w-full max-w-md">
+        {/* Header Section */}
+        <div className="bg-yellow-400 rounded-t-2xl p-8 text-center mb-0">
+          <div className="flex justify-center mb-6" >
+            <Image
+              src="/images/logo.png"
+              alt="Satria Car & Moto Clean"
+              width={96}
+              height={96}
+              className="shadow-lg rounded-full"
+            />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Satria Car & Moto Clean
+          </h1>
+          <p className="text-slate-700 text-sm">Dashboard Management System</p>
+        </div>
+
+        {/* Login Card */}
+        <Card className="rounded-none border-0 bg-white shadow-2xl">
+          <CardContent className="pt-8 pb-6">
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">
+              Login ke Dashboard
+            </h2>
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-700 font-semibold">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="Masukkan email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="!bg-white !border-2 !border-slate-500 !text-slate-900 !placeholder-slate-400 rounded-lg h-12 focus:!border-yellow-400 !outline-none"
                 />
               </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-slate-700 font-semibold">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Masukkan password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="!bg-white !border-2 !border-slate-500 !text-slate-900 !placeholder-slate-400 rounded-lg h-12 focus:!border-yellow-400 !outline-none pr-10"
+                  />
+                  <svg
+                    className="absolute right-3 top-3.5 w-5 h-5 text-slate-500 group-focus-within:text-slate-900"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    Forgot your password?
-                  </Link>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
-              </Button>
-            </div>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/auth/sign-up"
-                className="underline underline-offset-4"
+
+              {/* Error Message */}
+              {error && (
+                <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">
+                  {error}
+                </p>
+              )}
+
+              {/* Login Button */}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold h-12 text-base rounded-lg transition-colors shadow-lg"
               >
-                Sign up
-              </Link>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                {isLoading ? "Sedang login..." : "Login"}
+              </Button>
+
+
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="bg-white text-center text-slate-500 text-xs py-4 border-t border-slate-200 rounded-b-2xl">
+          © 2026 Satria Car & Moto Clean. All rights reserved.
+        </div>
+
+        {/* Back to Website Link */}
+        <div className="text-center mt-6">
+          <Link
+            href="/"
+            className="text-white text-sm hover:text-yellow-400 transition-colors flex items-center justify-center gap-2"
+          >
+            <span>←</span>
+            <span>Kembali ke Website</span>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
