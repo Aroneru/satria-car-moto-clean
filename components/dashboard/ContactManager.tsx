@@ -1,18 +1,65 @@
 'use client';
-import { useState } from 'react';
-import { Save } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Save, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
 export function ContactManager() {
   const { contactInfo, setContactInfo } = useContent();
   const [formData, setFormData] = useState(contactInfo);
   const [saved, setSaved] = useState(false);
+  const loadedRef = useRef(false);
+
+  // Load data once when contactInfo becomes available
+  useEffect(() => {
+    if (contactInfo.email1 && !loadedRef.current) {
+      setFormData({
+        address: contactInfo.address || "",
+        phone1: contactInfo.phone1 || "",
+        phone2: contactInfo.phone2 || "",
+        email1: contactInfo.email1 || "",
+        email2: contactInfo.email2 || "",
+        hours: contactInfo.hours || "",
+        socialMedia: Array.isArray(contactInfo.socialMedia) ? [...contactInfo.socialMedia] : [],
+      });
+      loadedRef.current = true;
+    }
+  }, [contactInfo.email1]);
+
+  const socialMediaPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'youtube'] as const;
+
+  const handleAddSocialMedia = () => {
+    const newSocialMedia = {
+      id: Math.random().toString(36).substring(2, 11),
+      platform: socialMediaPlatforms[0],
+      url: '',
+    };
+    setFormData({
+      ...formData,
+      socialMedia: [...formData.socialMedia, newSocialMedia],
+    });
+  };
+
+  const handleRemoveSocialMedia = (id: string) => {
+    setFormData({
+      ...formData,
+      socialMedia: formData.socialMedia.filter((sm) => sm.id !== id),
+    });
+  };
+
+  const handleUpdateSocialMedia = (id: string, field: string, value: string) => {
+    setFormData({
+      ...formData,
+      socialMedia: formData.socialMedia.map((sm) =>
+        sm.id === id ? { ...sm, [field]: value } : sm
+      ),
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setContactInfo(formData);
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
@@ -32,7 +79,7 @@ export function ContactManager() {
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               required
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
               placeholder="Full business address"
             />
           </div>
@@ -47,7 +94,7 @@ export function ContactManager() {
                 value={formData.phone1}
                 onChange={(e) => setFormData({ ...formData, phone1: e.target.value })}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
                 placeholder="+62 812-3456-7890"
               />
             </div>
@@ -60,7 +107,7 @@ export function ContactManager() {
                 type="tel"
                 value={formData.phone2}
                 onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
                 placeholder="+62 821-9876-5432"
               />
             </div>
@@ -76,7 +123,7 @@ export function ContactManager() {
                 value={formData.email1}
                 onChange={(e) => setFormData({ ...formData, email1: e.target.value })}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
                 placeholder="info@satriaclean.com"
               />
             </div>
@@ -89,7 +136,7 @@ export function ContactManager() {
                 type="email"
                 value={formData.email2}
                 onChange={(e) => setFormData({ ...formData, email2: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
                 placeholder="booking@satriaclean.com"
               />
             </div>
@@ -104,36 +151,74 @@ export function ContactManager() {
               onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
               required
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
               placeholder="Monday - Saturday: 08:00 - 18:00"
             />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-[#1D1D1D] mb-2">
-                Facebook URL
-              </label>
-              <input
-                type="url"
-                value={formData.facebook}
-                onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
-                placeholder="https://facebook.com/satriaclean"
-              />
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <label className="text-sm font-semibold text-[#1D1D1D]">Social Media Links</label>
+              <button
+                type="button"
+                onClick={handleAddSocialMedia}
+                className="flex items-center gap-2 bg-[#FCDE04] text-[#1D1D1D] px-3 py-1 rounded-lg font-semibold hover:bg-[#e8cd04] transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Social Media
+              </button>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-[#1D1D1D] mb-2">
-                Instagram URL
-              </label>
-              <input
-                type="url"
-                value={formData.instagram}
-                onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
-                placeholder="https://instagram.com/satriaclean"
-              />
+            <div className="space-y-4">
+              {formData.socialMedia.map((socialMedia) => (
+                <div key={socialMedia.id} className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-[#1D1D1D] mb-1">
+                      Platform
+                    </label>
+                    <select
+                      value={socialMedia.platform}
+                      onChange={(e) =>
+                        handleUpdateSocialMedia(socialMedia.id, 'platform', e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
+                    >
+                      {socialMediaPlatforms.map((platform) => (
+                        <option key={platform} value={platform}>
+                          {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-[#1D1D1D] mb-1">
+                      URL
+                    </label>
+                    <input
+                      type="url"
+                      value={socialMedia.url}
+                      onChange={(e) =>
+                        handleUpdateSocialMedia(socialMedia.id, 'url', e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
+                      placeholder="https://..."
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSocialMedia(socialMedia.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+
+              {formData.socialMedia.length === 0 && (
+                <p className="text-gray-500 text-sm">No social media links added yet.</p>
+              )}
             </div>
           </div>
 
@@ -146,8 +231,9 @@ export function ContactManager() {
               Save Changes
             </button>
             {saved && (
-              <div className="flex items-center gap-2 text-green-600 font-semibold">
-                ✓ Saved successfully!
+              <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 text-green-700 font-semibold rounded-lg">
+                <CheckCircle className="w-5 h-5" />
+                Berhasil disimpan!
               </div>
             )}
           </div>

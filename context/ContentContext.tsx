@@ -44,6 +44,12 @@ interface TeamMember {
   photo?: string;
 }
 
+interface SocialMedia {
+  id: string;
+  platform: "facebook" | "instagram" | "tiktok" | "whatsapp" | "youtube";
+  url: string;
+}
+
 interface ContactInfo {
   address: string;
   phone1: string;
@@ -51,8 +57,7 @@ interface ContactInfo {
   email1: string;
   email2: string;
   hours: string;
-  facebook: string;
-  instagram: string;
+  socialMedia: SocialMedia[];
 }
 
 interface QueueItem {
@@ -119,8 +124,7 @@ const defaultContactInfo: ContactInfo = {
   email1: "",
   email2: "",
   hours: "",
-  facebook: "",
-  instagram: "",
+  socialMedia: [],
 };
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
@@ -211,7 +215,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           .order("created_at", { ascending: true }),
         supabase
           .from("contact_info")
-          .select("address, phone1, phone2, email1, email2, hours, facebook, instagram")
+          .select("address, phone1, phone2, email1, email2, hours, facebook, instagram, social_media")
           .eq("id", true)
           .maybeSingle(),
         supabase
@@ -317,7 +321,26 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setTestimonialsState(mappedTestimonials);
       setGalleryImagesState(mappedGallery);
       setTeamMembersState(mappedTeam);
-      setContactInfoState(contactRes.data ?? defaultContactInfo);
+      
+      // Map contact info with social media array
+      let mappedContactInfo: ContactInfo = defaultContactInfo;
+      if (contactRes.data) {
+        const socialMediaArray = Array.isArray(contactRes.data.social_media)
+          ? contactRes.data.social_media
+          : [];
+        
+        mappedContactInfo = {
+          address: contactRes.data.address || "",
+          phone1: contactRes.data.phone1 || "",
+          phone2: contactRes.data.phone2 || "",
+          email1: contactRes.data.email1 || "",
+          email2: contactRes.data.email2 || "",
+          hours: contactRes.data.hours || "",
+          socialMedia: socialMediaArray,
+        };
+      }
+      setContactInfoState(mappedContactInfo);
+      
       setQueueItemsState(mappedQueues);
       setTransactionsState(mappedTransactions);
       setIsLoading(false);
@@ -495,27 +518,45 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   };
 
   const setContactInfo = (next: ContactInfo) => {
+    // Update local state immediately
     setContactInfoState(next);
 
-    void (async () => {
-      const supabase = createClient();
-      const { error } = await supabase.from("contact_info").upsert(
-        {
-          id: true,
-          address: next.address,
-          phone1: next.phone1,
-          phone2: next.phone2 || null,
-          email1: next.email1,
-          email2: next.email2 || null,
-          hours: next.hours,
-          facebook: next.facebook || null,
-          instagram: next.instagram || null,
-        },
-        { onConflict: "id" },
-      );
+    // Save to database asynchronously
+    setTimeout(() => {
+      void (async () => {
+        try {
+          const supabase = createClient();
+          
+          // Create a clean object without circular refs
+          const cleanData = {
+            id: true,
+            address: next.address || "",
+            phone1: next.phone1 || "",
+            phone2: next.phone2 || null,
+            email1: next.email1 || "",
+            email2: next.email2 || null,
+            hours: next.hours || "",
+            facebook: null,
+            instagram: null,
+            social_media: next.socialMedia ? next.socialMedia.map(sm => ({
+              id: sm.id,
+              platform: sm.platform,
+              url: sm.url
+            })) : [],
+          };
 
-      if (error) console.error("Failed to save contact info", error.message);
-    })();
+          const { error } = await supabase
+            .from("contact_info")
+            .upsert(cleanData);
+
+          if (error) {
+            console.error("Failed to save contact:", error.message || error);
+          }
+        } catch (err) {
+          console.error("Save error:", err);
+        }
+      })();
+    }, 100);
   };
 
   const setQueueItems = (next: QueueItem[]) => {
