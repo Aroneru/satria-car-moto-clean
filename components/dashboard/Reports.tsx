@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FileText, Download, Calendar, Car, Bike, TrendingUp, TrendingDown } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -119,7 +119,7 @@ export function Reports() {
         `Rp ${data.revenue.toLocaleString('id-ID')}`,
       ]);
 
-      doc.autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [['Service', 'Count', 'Revenue']],
         body: serviceData,
@@ -128,7 +128,7 @@ export function Reports() {
         styles: { fontSize: 9 },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos = (doc as any).lastAutoTable?.finalY + 10;
     }
 
     // Detailed Transactions (if detailed report)
@@ -154,7 +154,7 @@ export function Reports() {
         doc.text('Income:', 14, yPos);
         yPos += 5;
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPos,
           head: [['Date', 'Category', 'Description', 'Amount']],
           body: incomeData,
@@ -163,7 +163,7 @@ export function Reports() {
           styles: { fontSize: 8 },
         });
 
-        yPos = (doc as any).lastAutoTable.finalY + 8;
+        yPos = (doc as any).lastAutoTable?.finalY + 8;
       }
 
       // Expenses (start new page if needed)
@@ -187,7 +187,7 @@ export function Reports() {
         doc.text('Expenses:', 14, yPos);
         yPos += 5;
 
-        doc.autoTable({
+        autoTable(doc, {
           startY: yPos,
           head: [['Date', 'Category', 'Description', 'Amount']],
           body: expenseData,

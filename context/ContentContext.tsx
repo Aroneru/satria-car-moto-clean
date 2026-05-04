@@ -69,6 +69,7 @@ interface QueueItem {
   createdAt: Date;
   completedAt?: Date;
   notes?: string;
+  paid?: boolean; // client-side flag to indicate payment recorded
 }
 
 interface Transaction {
@@ -298,6 +299,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         createdAt: new Date(row.queued_at),
         completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
         notes: row.notes ?? "",
+        // paid is a client-only flag; DB doesn't track it
+        paid: false,
       }));
 
       const mappedTransactions: Transaction[] = (transactionsRes.data ?? []).map((row) => ({

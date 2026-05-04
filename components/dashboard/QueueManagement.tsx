@@ -18,6 +18,33 @@ const vehicleDatabase = {
   },
 };
 
+type QueueStatus = 'waiting' | 'in-progress' | 'completed' | 'cancelled';
+
+type QueueItem = {
+  id: string;
+  queueNumber: string;
+  customerName: string;
+  phoneNumber: string;
+  vehicleType: 'car' | 'motorcycle';
+  vehiclePlate: string;
+  serviceId: string;
+  serviceName: string;
+  price: number;
+  status: QueueStatus;
+  createdAt: Date;
+  completedAt?: Date;
+  notes?: string;
+  paid?: boolean;
+};
+
+type QueueGroup = {
+  customerName: string;
+  phoneNumber: string;
+  vehicleType: 'car' | 'motorcycle';
+  vehiclePlate: string;
+  services: QueueItem[];
+};
+
 export function QueueManagement() {
   const { services, queueItems, setQueueItems, transactions, setTransactions } = useContent();
   
@@ -128,6 +155,7 @@ export function QueueManagement() {
         price,
         status: 'waiting' as const,
         createdAt: new Date(),
+        paid: false,
         notes: '',
       };
 
@@ -172,26 +200,32 @@ export function QueueManagement() {
   };
 
   // Handle status change
-  const handleStatusChange = (queueId: string, newStatus: 'waiting' | 'in-progress' | 'completed' | 'cancelled') => {
+  const handleStatusChange = (queueId: string, newStatus: QueueStatus) => {
     const queue = queueItems.find((q) => q.id === queueId);
     if (!queue) return;
+
+    const alreadyPaid = transactions.some((t) => t.queueId === queue.id && t.type === 'income');
+
+    const shouldCreateIncome = newStatus === 'in-progress' && queue.status !== 'in-progress' && !alreadyPaid && !queue.paid;
 
     const updatedQueue = {
       ...queue,
       status: newStatus,
       completedAt: newStatus === 'completed' ? new Date() : queue.completedAt,
+      paid: shouldCreateIncome ? true : queue.paid,
     };
 
-    setQueueItems(queueItems.map((q) => (q.id === queueId ? updatedQueue : q)));
+    // apply a single state update to avoid overwriting with stale closure values
+    const newQueues = queueItems.map((q) => (q.id === queueId ? updatedQueue : q));
+    setQueueItems(newQueues);
 
-    // If completed, create income transaction
-    if (newStatus === 'completed' && queue.status !== 'completed') {
+    if (shouldCreateIncome) {
       const transaction = {
         id: crypto.randomUUID(),
         type: 'income' as const,
         category: 'Service Payment',
         amount: queue.price,
-        description: `${queue.serviceName} - ${queue.vehiclePlate} - ${queue.customerName}`,
+        description: `${queue.queueNumber} - ${queue.customerName} - ${queue.serviceName}`,
         date: new Date(),
         queueId: queue.id,
       };
@@ -223,6 +257,36 @@ export function QueueManagement() {
   const sortedQueues = [...filteredQueues].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  // Group queues by customer (phone number as unique identifier)
+  const groupedQueues = sortedQueues.reduce<Record<string, QueueGroup>>((acc, queue) => {
+    const phoneKey = queue.phoneNumber;
+    if (!acc[phoneKey]) {
+      acc[phoneKey] = {
+        customerName: queue.customerName,
+        phoneNumber: queue.phoneNumber,
+        vehicleType: queue.vehicleType,
+        vehiclePlate: queue.vehiclePlate,
+        services: [],
+      };
+    }
+    acc[phoneKey].services.push(queue);
+    return acc;
+  }, {} as Record<string, any>);
+
+  let groupedQueuesList = Object.values(groupedQueues);
+
+  // Ensure services inside each group are sorted newest-first (by createdAt)
+  groupedQueuesList.forEach((group) => {
+    group.services.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  });
+
+  // Sort groups by their newest service (so groups with latest activity appear first)
+  groupedQueuesList.sort((a, b) => {
+    const aTime = a.services && a.services[0] ? new Date(a.services[0].createdAt).getTime() : 0;
+    const bTime = b.services && b.services[0] ? new Date(b.services[0].createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
 
   const statusColors = {
     waiting: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -327,94 +391,167 @@ export function QueueManagement() {
           </button>
         </div>
 
-        {/* Queue List */}
-        <div className="space-y-4">
-          {sortedQueues.length === 0 ? (
+        {/* Queue List - Grouped by Customer */}
+        <div className="space-y-6">
+          {groupedQueuesList.length === 0 ? (
             <div className="bg-white p-12 rounded-xl shadow-sm border border-[#D1D5DC] text-center">
               <p className="text-gray-500">No queue items found</p>
             </div>
           ) : (
-            sortedQueues.map((queue) => (
-              <div key={queue.id} className="bg-white p-6 rounded-xl shadow-sm border border-[#D1D5DC] hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-3">
-                      <h3 className="text-2xl font-bold text-[#1D1D1D]">{queue.queueNumber}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${statusColors[queue.status]}`}>
-                        {statusIcons[queue.status]}
-                        {queue.status.replace('-', ' ').toUpperCase()}
-                      </span>
-                      {queue.vehicleType === 'car' ? (
-                        <Car className="w-5 h-5 text-[#6797BF]" />
-                      ) : (
-                        <Bike className="w-5 h-5 text-[#6797BF]" />
-                      )}
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-4 mb-3">
-                      <div>
-                        <p className="text-xs text-gray-500">Customer</p>
-                        <p className="font-semibold text-[#1D1D1D]">{queue.customerName}</p>
-                        <p className="text-sm text-gray-600">{queue.phoneNumber}</p>
+            groupedQueuesList.map((group, groupIndex) => (
+              <div key={`${group.phoneNumber}-${groupIndex}`} className="bg-white rounded-xl shadow-sm border border-[#D1D5DC] overflow-hidden hover:shadow-md transition-shadow">
+                {/* Customer Header */}
+                <div className="bg-gradient-to-r from-[#FCDE04] to-[#e8cd04] px-6 py-4 border-b border-[#D1D5DC]">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-[#1D1D1D]">{group.customerName}</h3>
+                        {group.vehicleType === 'car' ? (
+                          <Car className="w-5 h-5 text-[#1D1D1D]" />
+                        ) : (
+                          <Bike className="w-5 h-5 text-[#1D1D1D]" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Vehicle</p>
-                        <p className="font-semibold text-[#1D1D1D]">{queue.vehiclePlate}</p>
-                        <p className="text-sm text-gray-600">{queue.vehicleType === 'car' ? 'Car' : 'Motorcycle'}</p>
+                      <div className="grid md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-xs text-gray-700 font-semibold">Phone</p>
+                          <p className="text-[#1D1D1D] font-semibold">{group.phoneNumber}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-700 font-semibold">Vehicle</p>
+                          <p className="text-[#1D1D1D] font-semibold">{group.vehiclePlate}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-700 font-semibold">Services Count</p>
+                          <p className="text-[#1D1D1D] font-semibold">{group.services.length}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Service</p>
-                        <p className="font-semibold text-[#1D1D1D]">{queue.serviceName}</p>
-                        <p className="text-sm text-[#6797BF] font-bold">Rp {queue.price.toLocaleString()}</p>
-                      </div>
-                    </div>
-
-                    {queue.notes && (
-                      <div className="mb-3">
-                        <p className="text-xs text-gray-500">Notes</p>
-                        <p className="text-sm text-gray-700">{queue.notes}</p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>Created: {new Date(queue.createdAt).toLocaleString()}</span>
-                      {queue.completedAt && (
-                        <span>Completed: {new Date(queue.completedAt).toLocaleString()}</span>
-                      )}
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex flex-col gap-2 ml-4">
-                    {queue.status === 'waiting' && (
-                      <button
-                        onClick={() => handleStatusChange(queue.id, 'in-progress')}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-                      >
-                        Start
-                      </button>
-                    )}
-                    {queue.status === 'in-progress' && (
-                      <button
-                        onClick={() => handleStatusChange(queue.id, 'completed')}
-                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-                      >
-                        Complete
-                      </button>
-                    )}
-                    {queue.status !== 'completed' && queue.status !== 'cancelled' && (
-                      <button
-                        onClick={() => handleStatusChange(queue.id, 'cancelled')}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(queue.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {/* Services Checklist */}
+                <div className="p-6">
+                  <div className="space-y-3">
+                    {group.services.map((queue) => {
+                      const allStatusesCompleted = group.services.every((q) => q.status === 'completed');
+                      const allStatuses = group.services.map((q) => q.status);
+                      const checkedCount = group.services.filter((q) => q.status === 'completed').length;
+                      
+                      return (
+                        <div
+                          key={queue.id}
+                          className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${
+                            queue.status === 'completed'
+                              ? 'bg-green-50 border-green-200'
+                              : queue.status === 'in-progress'
+                              ? 'bg-blue-50 border-blue-200'
+                              : 'bg-gray-50 border-gray-200 hover:border-[#FCDE04]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-4 flex-1">
+                            {/* Checkbox */}
+                            <input
+                              type="checkbox"
+                              checked={queue.status === 'completed'}
+                              onChange={() => {
+                                if (queue.status === 'completed') {
+                                  handleStatusChange(queue.id, 'waiting');
+                                } else {
+                                  handleStatusChange(queue.id, 'completed');
+                                }
+                              }}
+                              className="w-5 h-5 text-[#FCDE04] rounded focus:ring-[#FCDE04] cursor-pointer"
+                            />
+
+                            {/* Service Info */}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className={`font-semibold ${
+                                  queue.status === 'completed'
+                                    ? 'line-through text-gray-500'
+                                    : 'text-[#1D1D1D]'
+                                }`}>
+                                  {queue.serviceName}
+                                </p>
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${statusColors[queue.status]}`}>
+                                  {statusIcons[queue.status]}
+                                  {queue.status.replace('-', ' ').toUpperCase()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#6797BF] font-bold">
+                                Rp {queue.price.toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-col gap-2 ml-4">
+                            {queue.status === 'waiting' && (
+                              <button
+                                onClick={() => handleStatusChange(queue.id, 'in-progress')}
+                                className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-medium whitespace-nowrap"
+                              >
+                                Start
+                              </button>
+                            )}
+                            {queue.status === 'in-progress' && (
+                              <button
+                                onClick={() => handleStatusChange(queue.id, 'completed')}
+                                className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xs font-medium whitespace-nowrap"
+                              >
+                                Complete
+                              </button>
+                            )}
+                            {queue.status !== 'completed' && queue.status !== 'cancelled' && (
+                              <button
+                                onClick={() => handleStatusChange(queue.id, 'cancelled')}
+                                className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs font-medium whitespace-nowrap"
+                              >
+                                Cancel
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDelete(queue.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete service"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Group Summary */}
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="grid md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-600">Waiting</p>
+                        <p className="font-bold text-yellow-600">
+                          {group.services.filter((q) => q.status === 'waiting').length}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">In Progress</p>
+                        <p className="font-bold text-blue-600">
+                          {group.services.filter((q) => q.status === 'in-progress').length}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Completed</p>
+                        <p className="font-bold text-green-600">
+                          {group.services.filter((q) => q.status === 'completed').length}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600">Total Value</p>
+                        <p className="font-bold text-[#6797BF]">
+                          Rp {group.services.reduce((sum, q) => sum + q.price, 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
