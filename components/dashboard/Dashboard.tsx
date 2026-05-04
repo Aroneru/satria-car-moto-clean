@@ -1,12 +1,32 @@
 'use client';
-import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, Briefcase, MessageSquare, Image, Users, Phone, Globe, LogOut, ClipboardList, Wallet, FileText } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 const logo = '/images/logo.png';
 
 export function Dashboard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const location = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error('Logout failed:', error.message);
+      setIsLoggingOut(false);
+      return;
+    }
+
+    router.replace('/auth/login');
+    router.refresh();
+  };
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -65,9 +85,14 @@ export function Dashboard({ children }: { children: React.ReactNode }) {
             <Globe className="w-5 h-5" />
             <span className="font-medium">View Website</span>
           </Link>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-900 hover:text-white transition-colors mt-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-900 hover:text-white transition-colors mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
             <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
+            <span className="font-medium">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
           </button>
         </div>
       </aside>
