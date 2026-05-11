@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, TrendingUp, TrendingDown, Wallet, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function FinancialManagement() {
   const { transactions, setTransactions } = useContent();
@@ -11,6 +12,7 @@ export function FinancialManagement() {
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense',
@@ -69,9 +71,13 @@ export function FinancialManagement() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this transaction?')) {
-      setTransactions(transactions.filter((t) => t.id !== id));
-    }
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setTransactions(transactions.filter((t) => t.id !== deleteTarget));
+    setDeleteTarget(null);
   };
 
   const resetForm = () => {
@@ -160,6 +166,14 @@ export function FinancialManagement() {
 
   return (
     <div>
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Transaction"
+        message="Are you sure you want to delete this transaction? This action cannot be undone."
+        confirmLabel="Delete Transaction"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
       {/* Statistics */}
       <div className="grid md:grid-cols-4 gap-6 mb-6">
         <div className="bg-green-50 p-6 rounded-xl border-2 border-green-200">

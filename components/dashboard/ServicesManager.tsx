@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Car, Bike } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function ServicesManager() {
   const { services, setServices } = useContent();
   const [isEditing, setIsEditing] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
   const [filterTab, setFilterTab] = useState<'all' | 'car' | 'motor'>('all');
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -42,9 +44,13 @@ export function ServicesManager() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this service?')) {
-      setServices(services.filter((s) => s.id !== id));
-    }
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setServices(services.filter((s) => s.id !== deleteTarget));
+    setDeleteTarget(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,6 +151,14 @@ export function ServicesManager() {
 
   return (
     <div>
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Service"
+        message="Are you sure you want to delete this service? This action cannot be undone."
+        confirmLabel="Delete Service"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>

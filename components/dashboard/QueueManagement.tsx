@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Car, Bike, Search, Plus, Edit2, Trash2, Clock, CheckCircle, XCircle, Play, ArrowLeft } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 // Vehicle model database for auto-detection
 const vehicleDatabase = {
@@ -63,6 +64,7 @@ export function QueueManagement() {
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'item' | 'group'; value: string } | null>(null);
 
   // Auto-detect vehicle size based on search query
   useEffect(() => {
@@ -243,15 +245,23 @@ export function QueueManagement() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this queue?')) {
-      setQueueItems(queueItems.filter((q) => q.id !== id));
-    }
+    setDeleteTarget({ type: 'item', value: id });
   };
 
   const handleDeleteWholeGroup = (phoneNumber: string) => {
-    if (confirm('Are you sure you want to delete this entire customer queue and all their services? This action cannot be undone.')) {
-      setQueueItems(queueItems.filter((q) => q.phoneNumber !== phoneNumber));
+    setDeleteTarget({ type: 'group', value: phoneNumber });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === 'item') {
+      setQueueItems(queueItems.filter((q) => q.id !== deleteTarget.value));
+    } else {
+      setQueueItems(queueItems.filter((q) => q.phoneNumber !== deleteTarget.value));
     }
+
+    setDeleteTarget(null);
   };
 
   // Stats
@@ -339,6 +349,18 @@ export function QueueManagement() {
   if (viewMode === 'list') {
     return (
       <div>
+        <DeleteConfirmDialog
+          open={deleteTarget !== null}
+          title={deleteTarget?.type === 'group' ? 'Delete Whole Queue' : 'Delete Queue Item'}
+          message={
+            deleteTarget?.type === 'group'
+              ? 'Are you sure you want to delete this entire customer queue and all their services? This action cannot be undone.'
+              : 'Are you sure you want to delete this queue item? This action cannot be undone.'
+          }
+          confirmLabel={deleteTarget?.type === 'group' ? 'Delete Whole Queue' : 'Delete Item'}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-6">
           <div className="bg-yellow-50 p-6 rounded-xl border-2 border-yellow-200">

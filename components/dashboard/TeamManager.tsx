@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, User, Upload } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { ImageWithFallback } from '../sections/figma/ImageWithFallback';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function TeamManager() {
   const { teamMembers, setTeamMembers } = useContent();
   const [isEditing, setIsEditing] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,9 +30,13 @@ export function TeamManager() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this team member?')) {
-      setTeamMembers(teamMembers.filter((m) => m.id !== id));
-    }
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setTeamMembers(teamMembers.filter((m) => m.id !== deleteTarget));
+    setDeleteTarget(null);
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,6 +91,14 @@ export function TeamManager() {
 
   return (
     <div>
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Team Member"
+        message="Are you sure you want to delete this team member? This action cannot be undone."
+        confirmLabel="Delete Team Member"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
       <div className="flex justify-between items-center mb-6">
         <div>
           <p className="text-gray-600">Manage team members</p>

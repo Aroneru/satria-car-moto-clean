@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Plus, Edit2, Trash2, X, Upload, Loader } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { createClient } from '@/lib/supabase/client';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function GalleryManager() {
   const { galleryImages, setGalleryImages } = useContent();
@@ -12,6 +13,7 @@ export function GalleryManager() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -42,9 +44,13 @@ export function GalleryManager() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this image?')) {
-      setGalleryImages(galleryImages.filter((img) => img.id !== id));
-    }
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setGalleryImages(galleryImages.filter((img) => img.id !== deleteTarget));
+    setDeleteTarget(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +122,14 @@ export function GalleryManager() {
 
   return (
     <div>
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmLabel="Delete Image"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
       <div className="flex justify-between items-center mb-6">
         <div>
           <p className="text-gray-600">Manage gallery images</p>

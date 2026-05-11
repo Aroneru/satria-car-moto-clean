@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Save, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function ContactManager() {
   const socialMediaPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'youtube'] as const;
@@ -26,6 +27,7 @@ export function ContactManager() {
   });
   const [saved, setSaved] = useState(false);
   const loadedRef = useRef(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // Load data once when contactInfo becomes available
   useEffect(() => {
@@ -65,10 +67,16 @@ export function ContactManager() {
   };
 
   const handleRemoveSocialMedia = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const confirmDeleteSocialMedia = () => {
+    if (!deleteTarget) return;
     setFormData({
       ...formData,
-      socialMedia: formData.socialMedia.filter((sm) => sm.id !== id),
+      socialMedia: formData.socialMedia.filter((sm) => sm.id !== deleteTarget),
     });
+    setDeleteTarget(null);
   };
 
   const handleUpdateSocialMedia = (id: string, field: string, value: string) => {
@@ -89,6 +97,14 @@ export function ContactManager() {
 
   return (
     <div>
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Social Media Link"
+        message="Are you sure you want to delete this social media link? This action cannot be undone."
+        confirmLabel="Delete Link"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteSocialMedia}
+      />
       <div className="mb-6">
         <p className="text-gray-600">Update your business contact information</p>
       </div>
