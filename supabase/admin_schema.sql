@@ -242,6 +242,7 @@ create table if not exists public.contact_info (
   hours text not null,
   facebook text,
   instagram text,
+  social_media jsonb default '[]'::jsonb,
   updated_at timestamptz not null default now(),
   updated_by uuid
 );

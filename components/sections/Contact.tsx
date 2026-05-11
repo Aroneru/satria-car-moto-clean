@@ -1,7 +1,8 @@
 'use client';
-import { MapPin, Phone, Mail, Clock, Facebook, Instagram, Send } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useContent } from '../../context/ContentContext';
+import Image from 'next/image';
 
 export function Contact() {
   const { contactInfo } = useContent();
@@ -100,20 +101,28 @@ export function Contact() {
               {/* Social Media */}
               <div className="mt-8">
                 <h3 className="font-semibold text-[#1D1D1D] mb-4">Follow Us</h3>
-                <div className="flex gap-4">
-                  <a
-                    href="#"
-                    className="w-12 h-12 bg-[#FCDE04] rounded-full flex items-center justify-center hover:bg-[#e8cd04] transition-colors"
-                  >
-                    <Facebook className="w-6 h-6 text-[#1D1D1D]" />
-                  </a>
-                  <a
-                    href="#"
-                    className="w-12 h-12 bg-[#6797BF] rounded-full flex items-center justify-center hover:bg-[#5686ae] transition-colors"
-                  >
-                    <Instagram className="w-6 h-6 text-white" />
-                  </a>
+                <div className="flex gap-4 flex-wrap">
+                  {contactInfo.socialMedia.map((social) => (
+                    <a
+                      key={social.id}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+                      title={social.platform.charAt(0).toUpperCase() + social.platform.slice(1)}
+                    >
+                      <Image
+                        src={`/images/${social.platform}.png`}
+                        alt={social.platform}
+                        width={40}
+                        height={40}
+                      />
+                    </a>
+                  ))}
                 </div>
+                {contactInfo.socialMedia.length === 0 && (
+                  <p className="text-gray-500 text-sm">No social media links available</p>
+                )}
               </div>
             </div>
 
