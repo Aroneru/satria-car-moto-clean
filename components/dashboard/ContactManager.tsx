@@ -50,7 +50,7 @@ export function ContactManager() {
 
       loadedRef.current = true;
     }
-  }, [contactInfo, socialMediaPlatforms]);
+  }, [contactInfo]);
 
   const handleAddSocialMedia = () => {
     const newSocialMedia = {

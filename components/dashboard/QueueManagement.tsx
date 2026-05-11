@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Car, Bike, Search, Plus, Edit2, Trash2, Clock, CheckCircle, XCircle, Play, ArrowLeft } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
@@ -46,6 +47,7 @@ type QueueGroup = {
 };
 
 export function QueueManagement() {
+  const router = useRouter();
   const { services, queueItems, setQueueItems, transactions, setTransactions } = useContent();
   
   // View state - 'list' or 'create'
@@ -172,6 +174,9 @@ export function QueueManagement() {
     setSelectedSize('small');
 
     alert('Order processed successfully!');
+    
+    // Redirect to queue list page
+    router.push('/dashboard/queue');
   };
 
   // Get size options based on vehicle type
@@ -237,6 +242,12 @@ export function QueueManagement() {
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this queue?')) {
       setQueueItems(queueItems.filter((q) => q.id !== id));
+    }
+  };
+
+  const handleDeleteWholeGroup = (phoneNumber: string) => {
+    if (confirm('Are you sure you want to delete this entire customer queue and all their services? This action cannot be undone.')) {
+      setQueueItems(queueItems.filter((q) => q.phoneNumber !== phoneNumber));
     }
   };
 
@@ -571,7 +582,7 @@ export function QueueManagement() {
 
                   {/* Group Summary */}
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="grid md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid md:grid-cols-4 gap-4 text-sm mb-4">
                       <div>
                         <p className="text-xs text-gray-600">Waiting</p>
                         <p className="font-bold text-yellow-600">
@@ -597,6 +608,15 @@ export function QueueManagement() {
                         </p>
                       </div>
                     </div>
+                    
+                    {/* Delete Whole Group Button */}
+                    <button
+                      onClick={() => handleDeleteWholeGroup(group.phoneNumber)}
+                      className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Whole Queue
+                    </button>
                   </div>
                 </div>
               </div>
