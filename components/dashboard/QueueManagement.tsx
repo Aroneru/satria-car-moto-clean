@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Car, Bike, Search, Plus, Edit2, Trash2, Clock, CheckCircle, XCircle, Play, ArrowLeft } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 // Vehicle model database for auto-detection
@@ -50,6 +51,7 @@ type QueueGroup = {
 export function QueueManagement() {
   const router = useRouter();
   const { services, queueItems, setQueueItems, transactions, setTransactions } = useContent();
+  const { addToast } = useToast();
   
   // View state - 'list' or 'create'
   const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
@@ -133,52 +135,78 @@ export function QueueManagement() {
   };
 
   // Handle order submission
-  const handleProcessOrder = (e: React.FormEvent) => {
+  const handleProcessOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (selectedServices.length === 0) {
-      alert('Please select at least one service');
-      return;
+    try {
+      if (selectedServices.length === 0) {
+        addToast('error', 'Pilih minimal satu layanan');
+        return;
+      }
+
+      if (!customerName.trim()) {
+        addToast('error', 'Nama pelanggan tidak boleh kosong');
+        return;
+      }
+
+      if (!phoneNumber.trim()) {
+        addToast('error', 'Nomor telepon tidak boleh kosong');
+        return;
+      }
+
+      if (!vehiclePlate.trim()) {
+        addToast('error', 'Nomor plat kendaraan tidak boleh kosong');
+        return;
+      }
+
+      // Create queue items for each selected service
+      selectedServices.forEach((serviceId) => {
+        const service = services.find((s) => s.id === serviceId);
+        if (!service) return;
+
+        const price = getServicePrice(service);
+
+        const queueData = {
+          id: crypto.randomUUID(),
+          queueNumber: getQueueNumber(),
+          customerName,
+          phoneNumber,
+          vehicleType,
+          vehiclePlate: vehiclePlate.toUpperCase(),
+          serviceId,
+          serviceName: service.title,
+          price,
+          status: 'waiting' as const,
+          createdAt: new Date(),
+          paid: false,
+          notes: '',
+        };
+
+        setQueueItems([...queueItems, queueData]);
+      });
+
+      // Show success toast (no auto-dismiss, will persist until page reload)
+      addToast('success', 'Pesanan berhasil ditambahkan!', 0);
+
+      // Reset form
+      setSearchQuery('');
+      setSelectedServices([]);
+      setVehiclePlate('');
+      setCustomerName('');
+      setPhoneNumber('');
+      setSelectedSize('small');
+      
+      // Reset view mode
+      setViewMode('list');
+      
+      // Wait a moment for the toast to display, then refresh
+      setTimeout(() => {
+        window.location.reload();
+      },);
+    } catch (error) {
+      console.error('Error processing order:', error);
+      addToast('error', 'Terjadi kesalahan saat memproses pesanan');
     }
-
-    // Create queue items for each selected service
-    selectedServices.forEach((serviceId) => {
-      const service = services.find((s) => s.id === serviceId);
-      if (!service) return;
-
-      const price = getServicePrice(service);
-
-      const queueData = {
-        id: crypto.randomUUID(),
-        queueNumber: getQueueNumber(),
-        customerName,
-        phoneNumber,
-        vehicleType,
-        vehiclePlate: vehiclePlate.toUpperCase(),
-        serviceId,
-        serviceName: service.title,
-        price,
-        status: 'waiting' as const,
-        createdAt: new Date(),
-        paid: false,
-        notes: '',
-      };
-
-      setQueueItems([...queueItems, queueData]);
-    });
-
-    // Reset form
-    setSearchQuery('');
-    setSelectedServices([]);
-    setVehiclePlate('');
-    setCustomerName('');
-    setPhoneNumber('');
-    setSelectedSize('small');
-
-    alert('Order processed successfully!');
-    
-    // Redirect to queue list page
-    router.push('/dashboard/queue');
   };
 
   // Get size options based on vehicle type
