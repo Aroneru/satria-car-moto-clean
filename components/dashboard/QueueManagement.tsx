@@ -233,6 +233,7 @@ export function QueueManagement() {
         amount: queue.price,
         description: `${queue.queueNumber} - ${queue.customerName} - ${queue.serviceName}`,
         date: new Date(),
+        createdAt: new Date(),
         queueId: queue.id,
       };
       setTransactions([...transactions, transaction]);

@@ -42,6 +42,7 @@ export function FinancialManagement() {
       amount: parseFloat(formData.amount),
       description: formData.description,
       date: new Date(formData.date),
+      createdAt: editingTransaction?.createdAt || new Date(),
     };
 
     if (editingTransaction) {
@@ -113,7 +114,7 @@ export function FinancialManagement() {
     }
 
     // Sort by latest first
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return filtered.sort((a, b) => new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime());
   };
 
   const filteredTransactions = getFilteredTransactions();
@@ -258,7 +259,11 @@ export function FinancialManagement() {
               paginatedTransactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    {new Date(transaction.date).toLocaleDateString('id-ID')}
+                    {new Date(transaction.date).toLocaleDateString('id-ID')} {new Date(transaction.createdAt || transaction.date).toLocaleTimeString('id-ID', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
                   </td>
                   <td className="px-6 py-4">
                     <span

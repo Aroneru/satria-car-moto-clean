@@ -84,6 +84,7 @@ interface Transaction {
   amount: number;
   description: string;
   date: Date;
+  createdAt?: Date;
   queueId?: string;
 }
 
@@ -332,6 +333,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         amount: Number(row.amount),
         description: row.description,
         date: new Date(row.transaction_at),
+        createdAt: new Date(row.transaction_at),
         queueId: row.queue_id ?? undefined,
       }));
 
