@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, X, TrendingUp, TrendingDown, Wallet, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, TrendingUp, TrendingDown, Wallet, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
 export function FinancialManagement() {
@@ -9,6 +9,8 @@ export function FinancialManagement() {
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterPeriod, setFilterPeriod] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense',
@@ -110,10 +112,15 @@ export function FinancialManagement() {
       });
     }
 
+    // Sort by latest first
     return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   const filteredTransactions = getFilteredTransactions();
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
 
   // Calculate statistics
   const totalIncome = transactions
@@ -192,7 +199,10 @@ export function FinancialManagement() {
         <div className="flex gap-2 flex-wrap">
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setCurrentPage(1);
+            }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
           >
             <option value="all">All Types</option>
@@ -202,7 +212,10 @@ export function FinancialManagement() {
 
           <select
             value={filterPeriod}
-            onChange={(e) => setFilterPeriod(e.target.value)}
+            onChange={(e) => {
+              setFilterPeriod(e.target.value);
+              setCurrentPage(1);
+            }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
           >
             <option value="all">All Time</option>
@@ -235,14 +248,14 @@ export function FinancialManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredTransactions.length === 0 ? (
+            {paginatedTransactions.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                   No transactions found
                 </td>
               </tr>
             ) : (
-              filteredTransactions.map((transaction) => (
+              paginatedTransactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {new Date(transaction.date).toLocaleDateString('id-ID')}
@@ -295,6 +308,60 @@ export function FinancialManagement() {
             )}
           </tbody>
         </table>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredTransactions.length)} of {filteredTransactions.length} transactions
+            </div>
+            <div className="flex gap-2 items-center">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="p-2 text-gray-600 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors border border-gray-300"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg font-medium transition-colors ${
+                        pageNum === currentPage
+                          ? 'bg-[#FCDE04] text-[#1D1D1D]'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 text-gray-600 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors border border-gray-300"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
