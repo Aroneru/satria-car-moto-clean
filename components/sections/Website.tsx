@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ContentProvider } from '../../context/ContentContext';
 import { Navigation } from './Navigation';
+import { Footer } from './Footer';
 import { Home } from './Home';
 import { About } from './About';
 import { Services } from './Services';
@@ -25,9 +26,10 @@ export function Website() {
 
   return (
     <ContentProvider>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <Navigation activePage={activePage} setActivePage={setActivePage} />
-        <main>{renderPage()}</main>
+        <main className="flex-1">{renderPage()}</main>
+        <Footer activePage={activePage} setActivePage={setActivePage} />
       </div>
     </ContentProvider>
   );
