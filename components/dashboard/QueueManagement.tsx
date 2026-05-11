@@ -233,6 +233,8 @@ export function QueueManagement() {
         amount: queue.price,
         description: `${queue.queueNumber} - ${queue.customerName} - ${queue.serviceName}`,
         date: new Date(),
+        // record precise ISO timestamp for DB compatibility
+        transaction_at: new Date().toISOString(),
         createdAt: new Date(),
         queueId: queue.id,
       };

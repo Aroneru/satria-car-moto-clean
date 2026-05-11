@@ -42,6 +42,8 @@ export function FinancialManagement() {
       amount: parseFloat(formData.amount),
       description: formData.description,
       date: new Date(formData.date),
+      // precise timestamp (ISO) including hour:minute:second
+      transaction_at: editingTransaction?.transaction_at || new Date().toISOString(),
       createdAt: editingTransaction?.createdAt || new Date(),
     };
 
