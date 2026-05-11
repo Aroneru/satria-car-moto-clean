@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Briefcase, MessageSquare, Image, Users, Phone, Globe, LogOut, ClipboardList, Wallet, FileText } from 'lucide-react';
+import { LayoutDashboard, Briefcase, MessageSquare, Image, Users, Phone, Globe, LogOut, ClipboardList, Wallet, FileText, Activity } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 const logo = '/images/logo.png';
 
@@ -38,6 +38,7 @@ export function Dashboard({ children }: { children: React.ReactNode }) {
     { path: '/dashboard/gallery', label: 'Gallery', icon: <Image className="w-5 h-5" /> },
     { path: '/dashboard/team', label: 'Team', icon: <Users className="w-5 h-5" /> },
     { path: '/dashboard/contact', label: 'Contact Info', icon: <Phone className="w-5 h-5" /> },
+    { path: '/dashboard/audit-logs', label: 'Audit Logs', icon: <Activity className="w-5 h-5" /> },
   ];
 
   return (

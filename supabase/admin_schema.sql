@@ -573,145 +573,217 @@ create policy "Roles delete by superadmin"
 create policy "Services select public"
   on public.services
   for select
-  using (is_active = true or public.is_admin());
+  using (true);
 
-create policy "Services manage by admin"
+create policy "Services insert by superadmin"
   on public.services
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
+
+create policy "Services update by superadmin"
+  on public.services
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Services delete by superadmin"
+  on public.services
+  for delete
+  using (public.is_superadmin());
 
 create policy "Service prices select public"
   on public.service_prices
   for select
-  using (
-    public.is_admin()
-    or exists (
-      select 1
-      from public.services s
-      where s.id = service_id
-        and s.is_active = true
-    )
-  );
+  using (true);
 
-create policy "Service prices manage by admin"
+create policy "Service prices insert by superadmin"
   on public.service_prices
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
 
-create policy "Queues select authenticated"
+create policy "Service prices update by superadmin"
+  on public.service_prices
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Service prices delete by superadmin"
+  on public.service_prices
+  for delete
+  using (public.is_superadmin());
+
+create policy "Queues select by superadmin"
   on public.queues
   for select
-  using (auth.role() = 'authenticated');
+  using (public.is_superadmin());
 
-create policy "Queues insert by admin"
+create policy "Queues insert by superadmin"
   on public.queues
   for insert
-  with check (public.is_admin());
+  with check (public.is_superadmin());
 
-create policy "Queues update by admin"
+create policy "Queues update by superadmin"
   on public.queues
   for update
-  using (public.is_admin())
-  with check (public.is_admin());
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
 
-create policy "Queues delete by admin"
+create policy "Queues delete by superadmin"
   on public.queues
   for delete
-  using (public.is_admin());
+  using (public.is_superadmin());
 
-create policy "Transactions select authenticated"
+create policy "Transactions select by superadmin"
   on public.transactions
   for select
-  using (auth.role() = 'authenticated');
+  using (public.is_superadmin());
 
-create policy "Transactions insert by admin"
+create policy "Transactions insert by superadmin"
   on public.transactions
   for insert
-  with check (public.is_admin());
+  with check (public.is_superadmin());
 
-create policy "Transactions update by admin"
+create policy "Transactions update by superadmin"
   on public.transactions
   for update
-  using (public.is_admin())
-  with check (public.is_admin());
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
 
-create policy "Transactions delete by admin"
+create policy "Transactions delete by superadmin"
   on public.transactions
   for delete
-  using (public.is_admin());
+  using (public.is_superadmin());
 
 create policy "Testimonials select"
   on public.testimonials
   for select
-  using (is_visible = true or public.is_admin());
+  using (true);
 
-create policy "Testimonials manage by admin"
+create policy "Testimonials insert by superadmin"
   on public.testimonials
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
+
+create policy "Testimonials update by superadmin"
+  on public.testimonials
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Testimonials delete by superadmin"
+  on public.testimonials
+  for delete
+  using (public.is_superadmin());
 
 create policy "Gallery select"
   on public.gallery_images
   for select
-  using (is_visible = true or public.is_admin());
+  using (true);
 
-create policy "Gallery manage by admin"
+create policy "Gallery insert by superadmin"
   on public.gallery_images
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
+
+create policy "Gallery update by superadmin"
+  on public.gallery_images
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Gallery delete by superadmin"
+  on public.gallery_images
+  for delete
+  using (public.is_superadmin());
 
 create policy "Gallery tags select"
   on public.gallery_tags
   for select
   using (true);
 
-create policy "Gallery tags manage by admin"
+create policy "Gallery tags insert by superadmin"
   on public.gallery_tags
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
+
+create policy "Gallery tags update by superadmin"
+  on public.gallery_tags
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Gallery tags delete by superadmin"
+  on public.gallery_tags
+  for delete
+  using (public.is_superadmin());
 
 create policy "Gallery image tags select"
   on public.gallery_image_tags
   for select
   using (true);
 
-create policy "Gallery image tags manage by admin"
+create policy "Gallery image tags insert by superadmin"
   on public.gallery_image_tags
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
+
+create policy "Gallery image tags update by superadmin"
+  on public.gallery_image_tags
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Gallery image tags delete by superadmin"
+  on public.gallery_image_tags
+  for delete
+  using (public.is_superadmin());
 
 create policy "Team members select"
   on public.team_members
   for select
-  using (is_active = true or public.is_admin());
+  using (true);
 
-create policy "Team members manage by admin"
+create policy "Team members insert by superadmin"
   on public.team_members
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
+
+create policy "Team members update by superadmin"
+  on public.team_members
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Team members delete by superadmin"
+  on public.team_members
+  for delete
+  using (public.is_superadmin());
 
 create policy "Contact info select"
   on public.contact_info
   for select
   using (true);
 
-create policy "Contact info manage by admin"
+create policy "Contact info insert by superadmin"
   on public.contact_info
-  for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  for insert
+  with check (public.is_superadmin());
 
-create policy "Audit log insert by admin"
+create policy "Contact info update by superadmin"
+  on public.contact_info
+  for update
+  using (public.is_superadmin())
+  with check (public.is_superadmin());
+
+create policy "Contact info delete by superadmin"
+  on public.contact_info
+  for delete
+  using (public.is_superadmin());
+
+create policy "Audit log insert by system"
   on public.audit_logs
   for insert
-  with check (public.is_admin());
+  with check (true);
 
 create policy "Audit log select by superadmin"
   on public.audit_logs
@@ -723,18 +795,18 @@ create policy "Gallery files are public"
   for select
   using (bucket_id = 'gallery');
 
-create policy "Gallery files managed by admin"
+create policy "Gallery files managed by superadmin"
   on storage.objects
   for insert
-  with check (bucket_id = 'gallery' and public.is_admin());
+  with check (bucket_id = 'gallery' and public.is_superadmin());
 
-create policy "Gallery files update by admin"
+create policy "Gallery files update by superadmin"
   on storage.objects
   for update
-  using (bucket_id = 'gallery' and public.is_admin())
-  with check (bucket_id = 'gallery' and public.is_admin());
+  using (bucket_id = 'gallery' and public.is_superadmin())
+  with check (bucket_id = 'gallery' and public.is_superadmin());
 
-create policy "Gallery files delete by admin"
+create policy "Gallery files delete by superadmin"
   on storage.objects
   for delete
-  using (bucket_id = 'gallery' and public.is_admin());
+  using (bucket_id = 'gallery' and public.is_superadmin());

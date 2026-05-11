@@ -51,6 +51,7 @@ export function QueueManagement() {
   // View state - 'list' or 'create'
   const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDate, setFilterDate] = useState<'all' | 'today' | 'week'>('all');
   
   // Form state
   const [vehicleType, setVehicleType] = useState<'car' | 'motorcycle'>('car');
@@ -250,9 +251,27 @@ export function QueueManagement() {
     }).length,
   };
 
-  const filteredQueues = filterStatus === 'all'
-    ? queueItems
-    : queueItems.filter((q) => q.status === filterStatus);
+  const isToday = (d: Date) => {
+    const today = new Date();
+    return d.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+  };
+
+  const isThisWeek = (d: Date) => {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    return d >= startOfWeek && d < endOfWeek;
+  };
+
+  const filteredQueues = queueItems.filter((q) => {
+    if (filterStatus !== 'all' && q.status !== filterStatus) return false;
+    if (filterDate === 'today' && !isToday(q.createdAt)) return false;
+    if (filterDate === 'week' && !isThisWeek(q.createdAt)) return false;
+    return true;
+  });
 
   const sortedQueues = [...filteredQueues].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -381,6 +400,32 @@ export function QueueManagement() {
             >
               Completed
             </button>
+            <div className="flex items-center gap-2 ml-2">
+              <button
+                onClick={() => setFilterDate('all')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterDate === 'all' ? 'bg-gray-100 text-gray-900' : 'bg-white text-gray-600 border border-[#D1D5DC]'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilterDate('today')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterDate === 'today' ? 'bg-[#FCDE04] text-[#1D1D1D]' : 'bg-white text-gray-600 border border-[#D1D5DC]'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setFilterDate('week')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filterDate === 'week' ? 'bg-[#FCDE04] text-[#1D1D1D]' : 'bg-white text-gray-600 border border-[#D1D5DC]'
+                }`}
+              >
+                This week
+              </button>
+            </div>
           </div>
           <button
             onClick={() => setViewMode('create')}

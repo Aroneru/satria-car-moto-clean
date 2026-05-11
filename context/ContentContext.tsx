@@ -82,6 +82,16 @@ interface Transaction {
   queueId?: string;
 }
 
+interface AuditLog {
+  id: string;
+  actorId?: string;
+  action: "create" | "update" | "delete";
+  tableName: string;
+  recordId?: string;
+  changes?: Record<string, any>;
+  createdAt: Date;
+}
+
 interface ContentContextType {
   services: Service[];
   setServices: (services: Service[]) => void;
@@ -97,6 +107,7 @@ interface ContentContextType {
   setQueueItems: (items: QueueItem[]) => void;
   transactions: Transaction[];
   setTransactions: (transactions: Transaction[]) => void;
+  auditLogs: AuditLog[];
   isLoading: boolean;
 }
 
@@ -170,6 +181,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [contactInfo, setContactInfoState] = useState<ContactInfo>(defaultContactInfo);
   const [queueItems, setQueueItemsState] = useState<QueueItem[]>([]);
   const [transactions, setTransactionsState] = useState<Transaction[]>([]);
+  const [auditLogs, setAuditLogsState] = useState<AuditLog[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -185,6 +197,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         contactRes,
         queuesRes,
         transactionsRes,
+        auditLogsRes,
       ] = await Promise.all([
         supabase
           .from("services")
@@ -224,6 +237,10 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           .from("transactions")
           .select("id, type, category, amount, description, transaction_at, queue_id")
           .order("transaction_at", { ascending: false }),
+        supabase
+          .from("audit_logs")
+          .select("id, actor_id, action, table_name, record_id, changes, created_at")
+          .order("created_at", { ascending: false }),
       ]);
 
       if (!mounted) {
@@ -237,6 +254,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       if (contactRes.error) console.error("Failed to load contact", contactRes.error.message);
       if (queuesRes.error) console.error("Failed to load queues", queuesRes.error.message);
       if (transactionsRes.error) console.error("Failed to load transactions", transactionsRes.error.message);
+      if (auditLogsRes.error) console.error("Failed to load audit logs", auditLogsRes.error.message);
 
       const mappedServices: Service[] = (servicesRes.data ?? []).map((service) => {
         const priceMatrix: Service["priceMatrix"] = {};
@@ -313,6 +331,16 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         queueId: row.queue_id ?? undefined,
       }));
 
+      const mappedAuditLogs: AuditLog[] = (auditLogsRes.data ?? []).map((row) => ({
+        id: row.id,
+        actorId: row.actor_id ?? undefined,
+        action: row.action,
+        tableName: row.table_name,
+        recordId: row.record_id ?? undefined,
+        changes: row.changes,
+        createdAt: new Date(row.created_at),
+      }));
+
       setServicesState(mappedServices);
       setTestimonialsState(mappedTestimonials);
       setGalleryImagesState(mappedGallery);
@@ -320,6 +348,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setContactInfoState(contactRes.data ?? defaultContactInfo);
       setQueueItemsState(mappedQueues);
       setTransactionsState(mappedTransactions);
+      setAuditLogsState(mappedAuditLogs);
       setIsLoading(false);
     };
 
@@ -606,6 +635,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setQueueItems,
       transactions,
       setTransactions,
+      auditLogs,
       isLoading,
     }),
     [
@@ -616,6 +646,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       contactInfo,
       queueItems,
       transactions,
+      auditLogs,
       isLoading,
     ],
   );
