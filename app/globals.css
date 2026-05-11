@@ -58,6 +58,19 @@
   }
 }
 
+/* Fix autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: inset 0 0 0px 1000px white !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+input:-webkit-autofill::first-line {
+  -webkit-text-fill-color: #0f172a !important;
+}
+
 @layer base {
   * {
     @apply border-border;

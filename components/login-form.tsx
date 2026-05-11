@@ -25,6 +25,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -88,7 +89,7 @@ export function LoginForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="!bg-white !border-2 !border-slate-500 !text-slate-900 !placeholder-slate-400 rounded-lg h-12 focus:!border-yellow-400 !outline-none"
+                  className="!bg-white !border-2 !border-slate-500 !text-slate-900 !placeholder-slate-400 rounded-lg h-12 focus:!border-yellow-400 !outline-none autofill:!bg-white autofill:!text-slate-900 autofill:shadow-[inset_0_0_0px_1000px_rgb(255_255_255)]"
                 />
               </div>
 
@@ -100,32 +101,26 @@ export function LoginForm({
                 <div className="relative">
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Masukkan password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="!bg-white !border-2 !border-slate-500 !text-slate-900 !placeholder-slate-400 rounded-lg h-12 focus:!border-yellow-400 !outline-none pr-10"
+                    className="!bg-white !border-2 !border-slate-500 !text-slate-900 !placeholder-slate-400 rounded-lg h-12 focus:!border-yellow-400 !outline-none pr-10 autofill:!bg-white autofill:!text-slate-900 autofill:shadow-[inset_0_0_0px_1000px_rgb(255_255_255)]"
                   />
-                  <svg
-                    className="absolute right-3 top-3.5 w-5 h-5 text-slate-500 group-focus-within:text-slate-900"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3.5 text-slate-500 hover:text-slate-900 transition-colors w-5 h-5"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    <Image
+                      src={!showPassword ? "/images/eye-closed.svg" : "/images/eye-open.svg"}
+                      alt={!showPassword ? "Show password" : "Hide password"}
+                      width={20}
+                      height={20}
+                      className="w-5 h-5"
                     />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
+                  </button>
                 </div>
               </div>
 
