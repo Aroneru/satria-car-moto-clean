@@ -4,14 +4,40 @@ import { Save, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
 export function ContactManager() {
+  const socialMediaPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'youtube'] as const;
+
   const { contactInfo, setContactInfo } = useContent();
-  const [formData, setFormData] = useState(contactInfo);
+  const [formData, setFormData] = useState<{
+    address: string;
+    phone1: string;
+    phone2: string;
+    email1: string;
+    email2: string;
+    hours: string;
+    socialMedia: Array<{ id: string; platform: string; url: string }>;
+  }>({
+    address: "",
+    phone1: "",
+    phone2: "",
+    email1: "",
+    email2: "",
+    hours: "",
+    socialMedia: [],
+  });
   const [saved, setSaved] = useState(false);
   const loadedRef = useRef(false);
 
   // Load data once when contactInfo becomes available
   useEffect(() => {
-    if (contactInfo.email1 && !loadedRef.current) {
+    if (!loadedRef.current && contactInfo) {
+      const normalized = Array.isArray(contactInfo.socialMedia)
+        ? contactInfo.socialMedia.map((sm) => ({
+            id: sm.id ?? Math.random().toString(36).substring(2, 11),
+            platform: sm.platform ?? socialMediaPlatforms[0],
+            url: sm.url ?? "",
+          }))
+        : [];
+
       setFormData({
         address: contactInfo.address || "",
         phone1: contactInfo.phone1 || "",
@@ -19,13 +45,12 @@ export function ContactManager() {
         email1: contactInfo.email1 || "",
         email2: contactInfo.email2 || "",
         hours: contactInfo.hours || "",
-        socialMedia: Array.isArray(contactInfo.socialMedia) ? [...contactInfo.socialMedia] : [],
+        socialMedia: normalized,
       });
+
       loadedRef.current = true;
     }
-  }, [contactInfo.email1]);
-
-  const socialMediaPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'youtube'] as const;
+  }, [contactInfo, socialMediaPlatforms]);
 
   const handleAddSocialMedia = () => {
     const newSocialMedia = {
@@ -57,7 +82,7 @@ export function ContactManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setContactInfo(formData);
+    setContactInfo(formData as any);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

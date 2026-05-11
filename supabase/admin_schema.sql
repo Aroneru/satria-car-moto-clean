@@ -320,6 +320,9 @@ create or replace function public.is_admin()
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
+set row_security = off
 as $$
   select exists (
     select 1
@@ -333,6 +336,9 @@ create or replace function public.is_superadmin()
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
+set row_security = off
 as $$
   select exists (
     select 1
@@ -511,9 +517,15 @@ drop policy if exists "Services select public" on public.services;
 drop policy if exists "Services manage by admin" on public.services;
 drop policy if exists "Services update by admin" on public.services;
 drop policy if exists "Services delete by admin" on public.services;
+drop policy if exists "Services insert by superadmin" on public.services;
+drop policy if exists "Services update by superadmin" on public.services;
+drop policy if exists "Services delete by superadmin" on public.services;
 
 drop policy if exists "Service prices select public" on public.service_prices;
 drop policy if exists "Service prices manage by admin" on public.service_prices;
+drop policy if exists "Service prices insert by superadmin" on public.service_prices;
+drop policy if exists "Service prices update by superadmin" on public.service_prices;
+drop policy if exists "Service prices delete by superadmin" on public.service_prices;
 
 drop policy if exists "Queues manage by admin" on public.queues;
 drop policy if exists "Transactions manage by admin" on public.transactions;
@@ -525,9 +537,20 @@ drop policy if exists "Queues delete by admin" on public.queues;
 drop policy if exists "Transactions insert by admin" on public.transactions;
 drop policy if exists "Transactions update by admin" on public.transactions;
 drop policy if exists "Transactions delete by admin" on public.transactions;
+drop policy if exists "Queues select by superadmin" on public.queues;
+drop policy if exists "Queues insert by superadmin" on public.queues;
+drop policy if exists "Queues update by superadmin" on public.queues;
+drop policy if exists "Queues delete by superadmin" on public.queues;
+drop policy if exists "Transactions select by superadmin" on public.transactions;
+drop policy if exists "Transactions insert by superadmin" on public.transactions;
+drop policy if exists "Transactions update by superadmin" on public.transactions;
+drop policy if exists "Transactions delete by superadmin" on public.transactions;
 
 drop policy if exists "Testimonials select" on public.testimonials;
 drop policy if exists "Testimonials manage by admin" on public.testimonials;
+drop policy if exists "Testimonials insert by superadmin" on public.testimonials;
+drop policy if exists "Testimonials update by superadmin" on public.testimonials;
+drop policy if exists "Testimonials delete by superadmin" on public.testimonials;
 
 drop policy if exists "Gallery select" on public.gallery_images;
 drop policy if exists "Gallery manage by admin" on public.gallery_images;
@@ -535,20 +558,39 @@ drop policy if exists "Gallery tags select" on public.gallery_tags;
 drop policy if exists "Gallery tags manage by admin" on public.gallery_tags;
 drop policy if exists "Gallery image tags select" on public.gallery_image_tags;
 drop policy if exists "Gallery image tags manage by admin" on public.gallery_image_tags;
+drop policy if exists "Gallery insert by superadmin" on public.gallery_images;
+drop policy if exists "Gallery update by superadmin" on public.gallery_images;
+drop policy if exists "Gallery delete by superadmin" on public.gallery_images;
+drop policy if exists "Gallery tags insert by superadmin" on public.gallery_tags;
+drop policy if exists "Gallery tags update by superadmin" on public.gallery_tags;
+drop policy if exists "Gallery tags delete by superadmin" on public.gallery_tags;
+drop policy if exists "Gallery image tags insert by superadmin" on public.gallery_image_tags;
+drop policy if exists "Gallery image tags update by superadmin" on public.gallery_image_tags;
+drop policy if exists "Gallery image tags delete by superadmin" on public.gallery_image_tags;
 
 drop policy if exists "Team members select" on public.team_members;
 drop policy if exists "Team members manage by admin" on public.team_members;
+drop policy if exists "Team members insert by superadmin" on public.team_members;
+drop policy if exists "Team members update by superadmin" on public.team_members;
+drop policy if exists "Team members delete by superadmin" on public.team_members;
 
 drop policy if exists "Contact info select" on public.contact_info;
 drop policy if exists "Contact info manage by admin" on public.contact_info;
+drop policy if exists "Contact info insert by superadmin" on public.contact_info;
+drop policy if exists "Contact info update by superadmin" on public.contact_info;
+drop policy if exists "Contact info delete by superadmin" on public.contact_info;
 
 drop policy if exists "Audit log insert by admin" on public.audit_logs;
 drop policy if exists "Audit log select by superadmin" on public.audit_logs;
+drop policy if exists "Audit log insert by system" on public.audit_logs;
 
 drop policy if exists "Gallery files are public" on storage.objects;
 drop policy if exists "Gallery files managed by admin" on storage.objects;
 drop policy if exists "Gallery files update by admin" on storage.objects;
 drop policy if exists "Gallery files delete by admin" on storage.objects;
+drop policy if exists "Gallery files managed by superadmin" on storage.objects;
+drop policy if exists "Gallery files update by superadmin" on storage.objects;
+drop policy if exists "Gallery files delete by superadmin" on storage.objects;
 
 create policy "Roles select own or superadmin"
   on public.user_roles

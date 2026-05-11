@@ -356,7 +356,14 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         const socialMediaArray = Array.isArray(contactRes.data.social_media)
           ? contactRes.data.social_media
           : [];
-        
+
+        // Normalize social media entries to ensure `id`, `platform`, and `url` exist
+        const normalizedSocial: ContactInfo["socialMedia"] = socialMediaArray.map((sm: any) => ({
+          id: sm.id ?? crypto.randomUUID(),
+          platform: (sm.platform as any) ?? "facebook",
+          url: sm.url ?? "",
+        }));
+
         mappedContactInfo = {
           address: contactRes.data.address || "",
           phone1: contactRes.data.phone1 || "",
@@ -364,7 +371,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           email1: contactRes.data.email1 || "",
           email2: contactRes.data.email2 || "",
           hours: contactRes.data.hours || "",
-          socialMedia: socialMediaArray,
+          socialMedia: normalizedSocial,
         };
       }
       setContactInfoState(mappedContactInfo);

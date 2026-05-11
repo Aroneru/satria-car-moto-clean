@@ -1,28 +1,43 @@
 'use client';
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Upload, Loader } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { createClient } from '@/lib/supabase/client';
 
 export function GalleryManager() {
   const { galleryImages, setGalleryImages } = useContent();
   const [isEditing, setIsEditing] = useState(false);
   const [editingImage, setEditingImage] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
 
   const [formData, setFormData] = useState({
-    url: '',
     title: '',
     category: 'Service',
   });
 
   const categories = ['Service', 'Detailing', 'Results', 'Team'];
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadError(null);
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
   const handleEdit = (image: any) => {
     setEditingImage(image);
     setFormData({
-      url: image.url,
       title: image.title,
       category: image.category,
     });
+    setPreviewUrl(image.url);
     setIsEditing(true);
   };
 
@@ -32,27 +47,69 @@ export function GalleryManager() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadError(null);
+    setIsUploading(true);
 
-    const imageData = {
-      id: editingImage?.id || crypto.randomUUID(),
-      url: formData.url,
-      title: formData.title,
-      category: formData.category,
-    };
+    try {
+      let imageUrl = previewUrl;
 
-    if (editingImage) {
-      setGalleryImages(galleryImages.map((img) => (img.id === editingImage.id ? imageData : img)));
-    } else {
-      setGalleryImages([...galleryImages, imageData]);
+      // If editing, previewUrl is the old URL; only upload if file changed
+      // If new, we must have a file
+      if (!editingImage && !selectedFile) {
+        setUploadError('Please select an image file');
+        setIsUploading(false);
+        return;
+      }
+
+      // Upload new file if selected (for new or edited images)
+      if (selectedFile) {
+        const supabase = createClient();
+        const fileName = `${Date.now()}-${selectedFile.name}`;
+
+        const { data, error } = await supabase.storage
+          .from('gallery')
+          .upload(fileName, selectedFile);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('gallery')
+          .getPublicUrl(data.path);
+
+        imageUrl = publicUrlData.publicUrl;
+      }
+
+      const imageData = {
+        id: editingImage?.id || crypto.randomUUID(),
+        url: imageUrl,
+        title: formData.title,
+        category: formData.category,
+      };
+
+      if (editingImage) {
+        setGalleryImages(galleryImages.map((img) => (img.id === editingImage.id ? imageData : img)));
+      } else {
+        setGalleryImages([...galleryImages, imageData]);
+      }
+
+      resetForm();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
-    setFormData({ url: '', title: '', category: 'Service' });
+    setFormData({ title: '', category: 'Service' });
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setUploadError(null);
     setIsEditing(false);
     setEditingImage(null);
   };
@@ -118,17 +175,31 @@ export function GalleryManager() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-[#1D1D1D] mb-2">
-                  Image URL *
+                  Image File *
                 </label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
-                  placeholder="https://example.com/image.jpg"
-                />
+                <label className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#FCDE04] transition-colors flex items-center justify-center gap-2 bg-gray-50">
+                  <Upload className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-600">
+                    {selectedFile ? selectedFile.name : 'Click to select image'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                </label>
+                {!editingImage && !selectedFile && (
+                  <p className="text-sm text-red-600 mt-1">Image file required</p>
+                )}
               </div>
+
+              {uploadError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {uploadError}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-semibold text-[#1D1D1D] mb-2">
@@ -139,7 +210,8 @@ export function GalleryManager() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
+                  disabled={isUploading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="e.g., Professional Car Washing"
                 />
               </div>
@@ -151,7 +223,8 @@ export function GalleryManager() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
+                  disabled={isUploading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
@@ -161,14 +234,14 @@ export function GalleryManager() {
                 </select>
               </div>
 
-              {formData.url && (
+              {previewUrl && (
                 <div>
                   <label className="block text-sm font-semibold text-[#1D1D1D] mb-2">
                     Preview
                   </label>
                   <div className="w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
                     <img
-                      src={formData.url}
+                      src={previewUrl}
                       alt="Preview"
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -182,14 +255,23 @@ export function GalleryManager() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-[#FCDE04] text-[#1D1D1D] px-6 py-3 rounded-lg font-semibold hover:bg-[#e8cd04] transition-colors"
+                  disabled={isUploading}
+                  className="flex-1 bg-[#FCDE04] text-[#1D1D1D] px-6 py-3 rounded-lg font-semibold hover:bg-[#e8cd04] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {editingImage ? 'Update Image' : 'Add Image'}
+                  {isUploading ? (
+                    <>
+                      <Loader className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    editingImage ? 'Update Image' : 'Upload Image'
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  disabled={isUploading}
+                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
