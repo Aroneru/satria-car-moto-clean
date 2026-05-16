@@ -79,7 +79,7 @@ export function LoginForm({
             <form onSubmit={handleLogin} className="space-y-5">
               {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-700 font-semibold">
+                <Label htmlFor="email" className="text-slate-700 font-semibold select-auto">
                   Email
                 </Label>
                 <Input
@@ -95,7 +95,7 @@ export function LoginForm({
 
               {/* Password Field */}
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-700 font-semibold">
+                <Label htmlFor="password" className="text-slate-700 font-semibold select-auto">
                   Password
                 </Label>
                 <div className="relative">

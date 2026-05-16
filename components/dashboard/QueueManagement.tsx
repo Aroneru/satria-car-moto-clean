@@ -67,6 +67,7 @@ export function QueueManagement() {
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'item' | 'group'; value: string } | null>(null);
+  const [statusChangeTarget, setStatusChangeTarget] = useState<{ queueId: string; newStatus: QueueStatus } | null>(null);
 
   // Auto-detect vehicle size based on search query
   useEffect(() => {
@@ -186,7 +187,7 @@ export function QueueManagement() {
       });
 
       // Show success toast (no auto-dismiss, will persist until page reload)
-      addToast('success', 'Pesanan berhasil ditambahkan!', 0);
+      addToast('success', 'Pesanan berhasil ditambahkan!');
 
       // Reset form
       setSearchQuery('');
@@ -235,8 +236,16 @@ export function QueueManagement() {
     return `${searchQuery} (${sizeOption?.label || 'Unknown'})`;
   };
 
-  // Handle status change
-  const handleStatusChange = (queueId: string, newStatus: QueueStatus) => {
+  // Request status change (shows confirmation dialog)
+  const requestStatusChange = (queueId: string, newStatus: QueueStatus) => {
+    setStatusChangeTarget({ queueId, newStatus });
+  };
+
+  // Confirm and apply status change
+  const confirmStatusChange = () => {
+    if (!statusChangeTarget) return;
+
+    const { queueId, newStatus } = statusChangeTarget;
     const queue = queueItems.find((q) => q.id === queueId);
     if (!queue) return;
 
@@ -255,12 +264,21 @@ export function QueueManagement() {
     const newQueues = queueItems.map((q) => (q.id === queueId ? updatedQueue : q));
     setQueueItems(newQueues);
 
+    // Add notifications for status changes
+    if (newStatus === 'in-progress' && queue.status !== 'in-progress') {
+      addToast('info', `${queue.queueNumber} - ${queue.customerName} dimulai!`);
+    } else if (newStatus === 'completed' && queue.status !== 'completed') {
+      addToast('success', `${queue.queueNumber} - ${queue.customerName} selesai!`);
+    } else if (newStatus === 'cancelled' && queue.status !== 'cancelled') {
+      addToast('error', `${queue.queueNumber} - ${queue.customerName} dibatalkan!`);
+    }
+
     if (shouldCreateIncome) {
       const transaction = {
         id: crypto.randomUUID(),
         type: 'income' as const,
         category: 'Service Payment',
-        amount: queue.price,
+        amount: typeof queue.price === 'number' && !isNaN(queue.price) ? queue.price : 0,
         description: `${queue.queueNumber} - ${queue.customerName} - ${queue.serviceName}`,
         date: new Date(),
         // record precise ISO timestamp for DB compatibility
@@ -270,6 +288,8 @@ export function QueueManagement() {
       };
       setTransactions([...transactions, transaction]);
     }
+
+    setStatusChangeTarget(null);
   };
 
   const handleDelete = (id: string) => {
@@ -285,8 +305,10 @@ export function QueueManagement() {
 
     if (deleteTarget.type === 'item') {
       setQueueItems(queueItems.filter((q) => q.id !== deleteTarget.value));
+      addToast('success', 'Item pesanan berhasil dihapus!');
     } else {
       setQueueItems(queueItems.filter((q) => q.phoneNumber !== deleteTarget.value));
+      addToast('success', 'Seluruh pesanan pelanggan berhasil dihapus!');
     }
 
     setDeleteTarget(null);
@@ -388,6 +410,39 @@ export function QueueManagement() {
           confirmLabel={deleteTarget?.type === 'group' ? 'Delete Whole Queue' : 'Delete Item'}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
+        />
+        <DeleteConfirmDialog
+          open={statusChangeTarget !== null}
+          title={
+            statusChangeTarget?.newStatus === 'in-progress'
+              ? 'Start Service'
+              : statusChangeTarget?.newStatus === 'completed'
+              ? 'Complete Service'
+              : 'Cancel Service'
+          }
+          message={
+            statusChangeTarget?.newStatus === 'in-progress'
+              ? 'Are you sure you want to start this service?'
+              : statusChangeTarget?.newStatus === 'completed'
+              ? 'Are you sure you want to mark this service as completed?'
+              : 'Are you sure you want to cancel this service?'
+          }
+          confirmLabel={
+            statusChangeTarget?.newStatus === 'in-progress'
+              ? 'Start'
+              : statusChangeTarget?.newStatus === 'completed'
+              ? 'Complete'
+              : 'Cancel'
+          }
+          confirmButtonColor={
+            statusChangeTarget?.newStatus === 'in-progress'
+              ? 'blue'
+              : statusChangeTarget?.newStatus === 'completed'
+              ? 'green'
+              : 'red'
+          }
+          onCancel={() => setStatusChangeTarget(null)}
+          onConfirm={confirmStatusChange}
         />
         {/* Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-6">
@@ -565,9 +620,9 @@ export function QueueManagement() {
                               checked={queue.status === 'completed'}
                               onChange={() => {
                                 if (queue.status === 'completed') {
-                                  handleStatusChange(queue.id, 'waiting');
-                                } else {
-                                  handleStatusChange(queue.id, 'completed');
+                                    requestStatusChange(queue.id, 'waiting');
+                                  } else {
+                                    requestStatusChange(queue.id, 'completed');
                                 }
                               }}
                               className="w-5 h-5 text-[#FCDE04] rounded focus:ring-[#FCDE04] cursor-pointer"
@@ -598,7 +653,7 @@ export function QueueManagement() {
                           <div className="flex flex-col gap-2 ml-4">
                             {queue.status === 'waiting' && (
                               <button
-                                onClick={() => handleStatusChange(queue.id, 'in-progress')}
+                                onClick={() => requestStatusChange(queue.id, 'in-progress')}
                                 className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-medium whitespace-nowrap"
                               >
                                 Start
@@ -606,7 +661,7 @@ export function QueueManagement() {
                             )}
                             {queue.status === 'in-progress' && (
                               <button
-                                onClick={() => handleStatusChange(queue.id, 'completed')}
+                                onClick={() => requestStatusChange(queue.id, 'completed')}
                                 className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xs font-medium whitespace-nowrap"
                               >
                                 Complete
@@ -614,7 +669,7 @@ export function QueueManagement() {
                             )}
                             {queue.status !== 'completed' && queue.status !== 'cancelled' && (
                               <button
-                                onClick={() => handleStatusChange(queue.id, 'cancelled')}
+                                onClick={() => requestStatusChange(queue.id, 'cancelled')}
                                 className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs font-medium whitespace-nowrap"
                               >
                                 Cancel

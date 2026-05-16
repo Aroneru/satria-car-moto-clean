@@ -644,15 +644,20 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       const supabase = createClient();
 
       if (next.length > 0) {
-        const rows = next.map((item) => ({
-          id: item.id,
-          type: item.type,
-          category: item.category,
-          amount: item.amount,
-          description: item.description,
-          transaction_at: item.date.toISOString(),
-          queue_id: item.queueId || null,
-        }));
+        const rows = next.map((item) => {
+          // Validate and ensure amount is a valid number
+          const amount = typeof item.amount === 'number' && !isNaN(item.amount) ? item.amount : 0;
+          
+          return {
+            id: item.id,
+            type: item.type,
+            category: item.category,
+            amount: Math.min(Math.max(amount, 0), 99999999.99), // Ensure within numeric(10,2) bounds
+            description: item.description,
+            transaction_at: item.date instanceof Date ? item.date.toISOString() : new Date(item.date).toISOString(),
+            queue_id: item.queueId || null,
+          };
+        });
 
         const { error } = await supabase.from("transactions").upsert(rows, { onConflict: "id" });
         if (error) console.error("Failed to upsert transactions", error.message);

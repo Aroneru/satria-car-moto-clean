@@ -1,11 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, TrendingUp, TrendingDown, Wallet, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function FinancialManagement() {
   const { transactions, setTransactions } = useContent();
+  const { addToast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [filterType, setFilterType] = useState<string>('all');
@@ -22,6 +24,29 @@ export function FinancialManagement() {
     date: new Date().toISOString().split('T')[0],
   });
 
+  const resetForm = () => {
+    setFormData({
+      type: 'expense',
+      category: '',
+      amount: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+    });
+    setIsAdding(false);
+    setEditingTransaction(null);
+  };
+
+  // Handle escape key to close form
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isAdding) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isAdding]);
+
   const expenseCategories = [
     'Cleaning Supplies',
     'Equipment Maintenance',
@@ -37,11 +62,17 @@ export function FinancialManagement() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const parsedAmount = parseFloat(formData.amount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      addToast('error', 'Jumlah harus berupa angka positif');
+      return;
+    }
+
     const transactionData = {
       id: editingTransaction?.id || crypto.randomUUID(),
       type: formData.type,
       category: formData.category,
-      amount: parseFloat(formData.amount),
+      amount: parsedAmount,
       description: formData.description,
       date: new Date(formData.date),
       // precise timestamp (ISO) including hour:minute:second
@@ -51,8 +82,10 @@ export function FinancialManagement() {
 
     if (editingTransaction) {
       setTransactions(transactions.map((t) => (t.id === editingTransaction.id ? transactionData : t)));
+      addToast('success', 'Transaksi berhasil diperbarui!');
     } else {
       setTransactions([...transactions, transactionData]);
+      addToast('success', 'Transaksi baru berhasil ditambahkan!');
     }
 
     resetForm();
@@ -78,18 +111,7 @@ export function FinancialManagement() {
     if (!deleteTarget) return;
     setTransactions(transactions.filter((t) => t.id !== deleteTarget));
     setDeleteTarget(null);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      type: 'expense',
-      category: '',
-      amount: '',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-    });
-    setIsAdding(false);
-    setEditingTransaction(null);
+    addToast('success', 'Transaksi berhasil dihapus!');
   };
 
   // Filtering logic
@@ -480,7 +502,7 @@ export function FinancialManagement() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-100 transition-colors"
                 >
                   Cancel
                 </button>

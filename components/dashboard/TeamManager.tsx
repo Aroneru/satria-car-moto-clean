@@ -1,12 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, User, Upload } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { ImageWithFallback } from '../sections/figma/ImageWithFallback';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function TeamManager() {
   const { teamMembers, setTeamMembers } = useContent();
+  const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -17,6 +19,23 @@ export function TeamManager() {
     description: '',
     photo: '',
   });
+
+  const resetForm = () => {
+    setFormData({ name: '', role: '', description: '', photo: '' });
+    setIsEditing(false);
+    setEditingMember(null);
+  };
+
+  // Handle escape key to close form
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditing) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isEditing]);
 
   const handleEdit = (member: any) => {
     setEditingMember(member);
@@ -37,6 +56,7 @@ export function TeamManager() {
     if (!deleteTarget) return;
     setTeamMembers(teamMembers.filter((m) => m.id !== deleteTarget));
     setDeleteTarget(null);
+    addToast('success', 'Anggota tim berhasil dihapus!');
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,17 +96,13 @@ export function TeamManager() {
 
     if (editingMember) {
       setTeamMembers(teamMembers.map((m) => (m.id === editingMember.id ? memberData : m)));
+      addToast('success', 'Anggota tim berhasil diperbarui!');
     } else {
       setTeamMembers([...teamMembers, memberData]);
+      addToast('success', 'Anggota tim baru berhasil ditambahkan!');
     }
 
     resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({ name: '', role: '', description: '', photo: '' });
-    setIsEditing(false);
-    setEditingMember(null);
   };
 
   return (
@@ -280,7 +296,7 @@ export function TeamManager() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 border-2 border-red-300 text-red-700 bg-red-50 rounded-lg font-semibold hover:bg-red-100 transition-colors"
                 >
                   Cancel
                 </button>

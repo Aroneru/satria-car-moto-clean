@@ -1,11 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Star } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function TestimonialsManager() {
   const { testimonials, setTestimonials } = useContent();
+  const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -15,6 +17,23 @@ export function TestimonialsManager() {
     text: '',
     rating: 5,
   });
+
+  const resetForm = () => {
+    setFormData({ name: '', text: '', rating: 5 });
+    setIsEditing(false);
+    setEditingTestimonial(null);
+  };
+
+  // Handle escape key to close form
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditing) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isEditing]);
 
   const handleEdit = (testimonial: any) => {
     setEditingTestimonial(testimonial);
@@ -34,6 +53,7 @@ export function TestimonialsManager() {
     if (!deleteTarget) return;
     setTestimonials(testimonials.filter((t) => t.id !== deleteTarget));
     setDeleteTarget(null);
+    addToast('success', 'Testimoni berhasil dihapus!');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -50,17 +70,13 @@ export function TestimonialsManager() {
       setTestimonials(
         testimonials.map((t) => (t.id === editingTestimonial.id ? testimonialData : t))
       );
+      addToast('success', 'Testimoni berhasil diperbarui!');
     } else {
       setTestimonials([...testimonials, testimonialData]);
+      addToast('success', 'Testimoni baru berhasil ditambahkan!');
     }
 
     resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({ name: '', text: '', rating: 5 });
-    setIsEditing(false);
-    setEditingTestimonial(null);
   };
 
   return (
@@ -192,7 +208,7 @@ export function TestimonialsManager() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 border-2 border-red-300 text-red-700 bg-red-50 rounded-lg font-semibold hover:bg-red-100 transition-colors"
                 >
                   Cancel
                 </button>

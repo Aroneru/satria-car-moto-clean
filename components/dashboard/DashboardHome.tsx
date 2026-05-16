@@ -113,7 +113,7 @@ export function DashboardHome() {
       </div>
 
       {/* Recent Activity Placeholder */}
-      <div className="mt-8 bg-gradient-to-r from-[#FCDE04] to-[#e8cd04] rounded-xl shadow-md p-6">
+      {/* <div className="mt-8 bg-gradient-to-r from-[#FCDE04] to-[#e8cd04] rounded-xl shadow-md p-6">
         <h3 className="text-lg font-bold text-[#1D1D1D] mb-2">💡 Tips</h3>
         <ul className="text-[#1D1D1D] space-y-2">
           <li>• Keep your services updated with current pricing</li>
@@ -121,7 +121,7 @@ export function DashboardHome() {
           <li>• Showcase customer testimonials to build trust</li>
           <li>• Update contact information if business hours change</li>
         </ul>
-      </div>
+      </div> */}
     </div>
   );
 }

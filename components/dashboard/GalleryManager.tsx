@@ -1,12 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Upload, Loader } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { createClient } from '@/lib/supabase/client';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function GalleryManager() {
   const { galleryImages, setGalleryImages } = useContent();
+  const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingImage, setEditingImage] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -19,6 +21,26 @@ export function GalleryManager() {
     title: '',
     category: 'Service',
   });
+
+  const resetForm = () => {
+    setFormData({ title: '', category: 'Service' });
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setUploadError(null);
+    setIsEditing(false);
+    setEditingImage(null);
+  };
+
+  // Handle escape key to close form
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditing) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isEditing]);
 
   const categories = ['Service', 'Detailing', 'Results', 'Team'];
 
@@ -51,6 +73,7 @@ export function GalleryManager() {
     if (!deleteTarget) return;
     setGalleryImages(galleryImages.filter((img) => img.id !== deleteTarget));
     setDeleteTarget(null);
+    addToast('success', 'Gambar berhasil dihapus!');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,8 +122,10 @@ export function GalleryManager() {
 
       if (editingImage) {
         setGalleryImages(galleryImages.map((img) => (img.id === editingImage.id ? imageData : img)));
+        addToast('success', 'Gambar berhasil diperbarui!');
       } else {
         setGalleryImages([...galleryImages, imageData]);
+        addToast('success', 'Gambar baru berhasil ditambahkan!');
       }
 
       resetForm();
@@ -109,15 +134,6 @@ export function GalleryManager() {
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const resetForm = () => {
-    setFormData({ title: '', category: 'Service' });
-    setSelectedFile(null);
-    setPreviewUrl('');
-    setUploadError(null);
-    setIsEditing(false);
-    setEditingImage(null);
   };
 
   return (
@@ -285,7 +301,7 @@ export function GalleryManager() {
                   type="button"
                   onClick={resetForm}
                   disabled={isUploading}
-                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="px-6 py-3 border-2 border-red-300 text-red-700 bg-red-50 rounded-lg font-semibold hover:bg-red-100 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>

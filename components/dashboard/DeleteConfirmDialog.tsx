@@ -8,6 +8,7 @@ type DeleteConfirmDialogProps = {
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  confirmButtonColor?: 'red' | 'blue' | 'green';
 };
 
 export function DeleteConfirmDialog({
@@ -18,8 +19,15 @@ export function DeleteConfirmDialog({
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
+  confirmButtonColor = 'red',
 }: DeleteConfirmDialogProps) {
   if (!open) return null;
+
+  const buttonColorClasses = {
+    red: 'bg-red-600 hover:bg-red-700',
+    blue: 'bg-blue-600 hover:bg-blue-700',
+    green: 'bg-green-600 hover:bg-green-700',
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -40,7 +48,7 @@ export function DeleteConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-semibold"
+            className={`px-4 py-2 rounded-lg ${buttonColorClasses[confirmButtonColor]} text-white transition-colors font-semibold`}
           >
             {confirmLabel}
           </button>

@@ -2,12 +2,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Save, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function ContactManager() {
   const socialMediaPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'youtube'] as const;
 
   const { contactInfo, setContactInfo } = useContent();
+  const { addToast } = useToast();
   const [formData, setFormData] = useState<{
     address: string;
     phone1: string;
@@ -28,6 +30,17 @@ export function ContactManager() {
   const [saved, setSaved] = useState(false);
   const loadedRef = useRef(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  // Handle escape key to close modal (optional, as ContactManager doesn't use modal)
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSaved(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
 
   // Load data once when contactInfo becomes available
   useEffect(() => {
@@ -77,6 +90,7 @@ export function ContactManager() {
       socialMedia: formData.socialMedia.filter((sm) => sm.id !== deleteTarget),
     });
     setDeleteTarget(null);
+    addToast('success', 'Media sosial berhasil dihapus!');
   };
 
   const handleUpdateSocialMedia = (id: string, field: string, value: string) => {
@@ -92,7 +106,7 @@ export function ContactManager() {
     e.preventDefault();
     setContactInfo(formData as any);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    addToast('success', 'Informasi kontak berhasil disimpan!');
   };
 
   return (

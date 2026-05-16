@@ -1,11 +1,13 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Car, Bike } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function ServicesManager() {
   const { services, setServices } = useContent();
+  const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
   const [filterTab, setFilterTab] = useState<'all' | 'car' | 'motor'>('all');
@@ -24,6 +26,35 @@ export function ServicesManager() {
     priceMotorcycleExtraLarge: '',
     duration: '',
   });
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      features: '',
+      priceSmall: '',
+      priceMedium: '',
+      priceLarge: '',
+      priceExtraLarge: '',
+      priceMotorcycleStandard: '',
+      priceMotorcycleMoge: '',
+      priceMotorcycleExtraLarge: '',
+      duration: '',
+    });
+    setIsEditing(false);
+    setEditingService(null);
+  };
+
+  // Handle escape key to close form
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEditing) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isEditing]);
 
   const handleEdit = (service: any) => {
     setEditingService(service);
@@ -51,6 +82,7 @@ export function ServicesManager() {
     if (!deleteTarget) return;
     setServices(services.filter((s) => s.id !== deleteTarget));
     setDeleteTarget(null);
+      addToast('success', 'Layanan berhasil dihapus!');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,29 +108,13 @@ export function ServicesManager() {
 
     if (editingService) {
       setServices(services.map((s) => (s.id === editingService.id ? serviceData : s)));
+      addToast('success', 'Layanan berhasil diperbarui!');
     } else {
       setServices([...services, serviceData]);
+      addToast('success', 'Layanan baru berhasil ditambahkan!');
     }
 
     resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      features: '',
-      priceSmall: '',
-      priceMedium: '',
-      priceLarge: '',
-      priceExtraLarge: '',
-      priceMotorcycleStandard: '',
-      priceMotorcycleMoge: '',
-      priceMotorcycleExtraLarge: '',
-      duration: '',
-    });
-    setIsEditing(false);
-    setEditingService(null);
   };
 
   // Get price range for display
@@ -353,7 +369,7 @@ export function ServicesManager() {
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       required
-                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                       placeholder="e.g., Nano Ceramic Coating"
                     />
                   </div>
@@ -367,7 +383,7 @@ export function ServicesManager() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       required
                       rows={3}
-                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                       placeholder="Brief description of the service"
                     />
                   </div>
@@ -381,7 +397,7 @@ export function ServicesManager() {
                       onChange={(e) => setFormData({ ...formData, features: e.target.value })}
                       required
                       rows={5}
-                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                       placeholder="Full exterior wash&#10;Interior cleaning&#10;Dashboard polish"
                     />
                   </div>
@@ -395,7 +411,7 @@ export function ServicesManager() {
                       value={formData.duration}
                       onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                       required
-                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                      className="w-full px-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                       placeholder="e.g., 30-40 minutes"
                     />
                   </div>
@@ -420,7 +436,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceSmall}
                         onChange={(e) => setFormData({ ...formData, priceSmall: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -438,7 +454,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceMedium}
                         onChange={(e) => setFormData({ ...formData, priceMedium: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -456,7 +472,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceLarge}
                         onChange={(e) => setFormData({ ...formData, priceLarge: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -474,7 +490,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceExtraLarge}
                         onChange={(e) => setFormData({ ...formData, priceExtraLarge: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -492,7 +508,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceMotorcycleStandard}
                         onChange={(e) => setFormData({ ...formData, priceMotorcycleStandard: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -510,7 +526,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceMotorcycleMoge}
                         onChange={(e) => setFormData({ ...formData, priceMotorcycleMoge: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -528,7 +544,7 @@ export function ServicesManager() {
                         type="number"
                         value={formData.priceMotorcycleExtraLarge}
                         onChange={(e) => setFormData({ ...formData, priceMotorcycleExtraLarge: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20"
+                        className="w-full pl-10 pr-4 py-2 border border-[#D1D5DC] rounded-lg focus:outline-none focus:border-[#FCDE04] focus:ring-2 focus:ring-[#FCDE04] focus:ring-opacity-20 bg-white dark:bg-white text-black dark:text-black"
                         placeholder="0"
                         min="0"
                         step="1000"
@@ -549,7 +565,7 @@ export function ServicesManager() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 bg-white border-2 border-[#D1D5DC] rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  className="px-6 py-3 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-semibold hover:bg-red-100 transition-colors"
                 >
                   Cancel
                 </button>
