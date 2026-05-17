@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Car, Bike } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function ServicesManager() {
-  const { services, setServices } = useContent();
+  const { services, setServices, isLoading } = useContent();
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
@@ -231,7 +232,22 @@ export function ServicesManager() {
 
       {/* Services List */}
       <div className="space-y-4">
-        {filteredServices.length === 0 ? (
+        {isLoading ? (
+          <>
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-[#D1D5DC]">
+                <div className="space-y-3">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-full" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        ) : filteredServices.length === 0 ? (
           <div className="bg-white p-12 rounded-xl shadow-sm border border-[#D1D5DC] text-center">
             <p className="text-gray-500">No services found</p>
           </div>

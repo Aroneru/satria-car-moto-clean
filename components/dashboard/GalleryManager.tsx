@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Upload, Loader } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function GalleryManager() {
-  const { galleryImages, setGalleryImages } = useContent();
+  const { galleryImages, setGalleryImages, isLoading } = useContent();
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingImage, setEditingImage] = useState<any>(null);
@@ -160,6 +161,19 @@ export function GalleryManager() {
       </div>
 
       {/* Gallery Grid */}
+      {isLoading ? (
+        <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+              <Skeleton className="w-full h-48" />
+              <div className="p-4 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
         {galleryImages.map((image) => (
           <div key={image.id} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
@@ -189,6 +203,7 @@ export function GalleryManager() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Edit/Add Modal */}
       {isEditing && (

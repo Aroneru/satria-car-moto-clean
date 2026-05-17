@@ -3,12 +3,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Save, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function ContactManager() {
   const socialMediaPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'youtube'] as const;
 
-  const { contactInfo, setContactInfo } = useContent();
+  const { contactInfo, setContactInfo, isLoading } = useContent();
   const { addToast } = useToast();
   const [formData, setFormData] = useState<{
     address: string;
@@ -123,6 +124,18 @@ export function ContactManager() {
         <p className="text-gray-600">Update your business contact information</p>
       </div>
 
+      {isLoading ? (
+        <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200 max-w-3xl">
+          <div className="space-y-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i}>
+                <Skeleton className="h-4 w-32 mb-2" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
       <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -294,6 +307,7 @@ export function ContactManager() {
           </div>
         </form>
       </div>
+      )}
 
       {/* Preview Section */}
       <div className="mt-8 bg-white p-8 rounded-xl shadow-md border border-gray-200 max-w-3xl">

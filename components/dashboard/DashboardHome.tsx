@@ -2,9 +2,10 @@
 import Link from 'next/link';
 import { Briefcase, MessageSquare, Image, Users, Phone, TrendingUp, ClipboardList, Wallet, FileText, DollarSign } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardHome() {
-  const { services, testimonials, galleryImages, teamMembers, queueItems, transactions } = useContent();
+  const { services, testimonials, galleryImages, teamMembers, queueItems, transactions, isLoading } = useContent();
 
   // POS Statistics
   const today = new Date().toISOString().split('T')[0];
@@ -34,6 +35,58 @@ export function DashboardHome() {
     { label: 'Completed Today', value: completedToday.length, icon: <Phone className="w-6 h-6" />, color: 'bg-green-500', link: '/dashboard/queue' },
     { label: 'Today\'s Revenue', value: `Rp ${(todayRevenue / 1000).toFixed(0)}K`, icon: <DollarSign className="w-6 h-6" />, color: 'bg-emerald-500', link: '/dashboard/financial' },
   ];
+
+  if (isLoading) {
+    return (
+      <div>
+        <div className="mb-8">
+          <Skeleton className="h-8 w-48 mb-4" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+
+        {/* Stats Skeleton Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <Skeleton className="h-5 w-5" />
+              </div>
+              <Skeleton className="h-8 w-20 mb-2" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
+
+        {/* POS Stats Skeleton Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <Skeleton className="h-5 w-5" />
+              </div>
+              <Skeleton className="h-8 w-20 mb-2" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Actions Skeleton */}
+        <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
+          <Skeleton className="h-6 w-32 mb-4" />
+          <div className="grid md:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="p-4 border-2 border-gray-200 rounded-lg">
+                <Skeleton className="h-8 w-8 mx-auto mb-2" />
+                <Skeleton className="h-4 w-28 mx-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

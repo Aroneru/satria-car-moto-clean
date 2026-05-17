@@ -245,7 +245,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         supabase
           .from("audit_logs")
           .select("id, actor_id, action, table_name, record_id, changes, created_at")
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .limit(1000),
       ]);
 
       if (!mounted) {
@@ -337,16 +338,6 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         queueId: row.queue_id ?? undefined,
       }));
 
-      const mappedAuditLogs: AuditLog[] = (auditLogsRes.data ?? []).map((row) => ({
-        id: row.id,
-        actorId: row.actor_id ?? undefined,
-        action: row.action,
-        tableName: row.table_name,
-        recordId: row.record_id ?? undefined,
-        changes: row.changes,
-        createdAt: new Date(row.created_at),
-      }));
-
       setServicesState(mappedServices);
       setTestimonialsState(mappedTestimonials);
       setGalleryImagesState(mappedGallery);
@@ -380,6 +371,17 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       
       setQueueItemsState(mappedQueues);
       setTransactionsState(mappedTransactions);
+
+      const mappedAuditLogs: AuditLog[] = (auditLogsRes.data ?? []).map((row: any) => ({
+        id: row.id,
+        actorId: row.actor_id ?? undefined,
+        action: row.action as AuditLog["action"],
+        tableName: row.table_name,
+        recordId: row.record_id ?? undefined,
+        changes: row.changes ?? undefined,
+        createdAt: new Date(row.created_at),
+      }));
+
       setAuditLogsState(mappedAuditLogs);
       setIsLoading(false);
     };

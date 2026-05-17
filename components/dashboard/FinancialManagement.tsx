@@ -4,14 +4,15 @@ import { Plus, Edit2, Trash2, X, TrendingUp, TrendingDown, Wallet, DollarSign, C
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function FinancialManagement() {
-  const { transactions, setTransactions } = useContent();
+  const { transactions, setTransactions, isLoading } = useContent();
   const { addToast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [filterType, setFilterType] = useState<string>('all');
-  const [filterPeriod, setFilterPeriod] = useState<string>('all');
+  const [filterPeriod, setFilterPeriod] = useState<string>('today');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -186,6 +187,21 @@ export function FinancialManagement() {
 
   const monthlyProfit = monthlyIncome - monthlyExpense;
 
+  // Loading skeleton for statistics cards
+  const StatisticsSkeleton = () => (
+    <div className="grid md:grid-cols-4 gap-6 mb-6">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="bg-gray-50 p-6 rounded-xl border-2 border-gray-200">
+          <div className="flex items-center gap-3 mb-2">
+            <Skeleton className="w-6 h-6" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-8 w-32" />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div>
       <DeleteConfirmDialog
@@ -197,6 +213,9 @@ export function FinancialManagement() {
         onConfirm={confirmDelete}
       />
       {/* Statistics */}
+      {isLoading ? (
+        <StatisticsSkeleton />
+      ) : (
       <div className="grid md:grid-cols-4 gap-6 mb-6">
         <div className="bg-green-50 p-6 rounded-xl border-2 border-green-200">
           <div className="flex items-center gap-3 mb-2">
@@ -232,8 +251,10 @@ export function FinancialManagement() {
           <p className="text-2xl font-bold text-[#1D1D1D]">Rp {monthlyProfit.toLocaleString()}</p>
         </div>
       </div>
+      )}
 
       {/* Filters and Add Button */}
+      {!isLoading && (
       <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
         <div className="flex gap-2 flex-wrap">
           <select
@@ -242,7 +263,13 @@ export function FinancialManagement() {
               setFilterType(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+            className="px-4 pr-10 py-2 bg-white border border-[#FCDE04] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FCDE04] text-gray-700 appearance-none cursor-pointer"
+            style={{
+              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 12px center',
+              backgroundSize: '18px',
+            }}
           >
             <option value="all">All Types</option>
             <option value="income">Income</option>
@@ -255,7 +282,13 @@ export function FinancialManagement() {
               setFilterPeriod(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04]"
+            className="px-4 pr-10 py-2 bg-white border border-[#FCDE04] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FCDE04] text-gray-700 appearance-none cursor-pointer"
+            style={{
+              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 12px center',
+              backgroundSize: '18px',
+            }}
           >
             <option value="all">All Time</option>
             <option value="today">Today</option>
@@ -272,8 +305,18 @@ export function FinancialManagement() {
           Add Transaction
         </button>
       </div>
+      )}
 
       {/* Transactions List */}
+      {isLoading ? (
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="space-y-4 p-6">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </div>
+      ) : (
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
@@ -406,6 +449,7 @@ export function FinancialManagement() {
           </div>
         )}
       </div>
+      )}
 
       {/* Add/Edit Modal */}
       {isAdding && (

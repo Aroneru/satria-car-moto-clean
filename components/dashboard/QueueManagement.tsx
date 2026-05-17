@@ -5,6 +5,7 @@ import { Car, Bike, Search, Plus, Edit2, Trash2, Clock, CheckCircle, XCircle, Pl
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Vehicle model database for auto-detection
 const vehicleDatabase = {
@@ -50,13 +51,13 @@ type QueueGroup = {
 
 export function QueueManagement() {
   const router = useRouter();
-  const { services, queueItems, setQueueItems, transactions, setTransactions } = useContent();
+  const { services, queueItems, setQueueItems, transactions, setTransactions, isLoading } = useContent();
   const { addToast } = useToast();
   
   // View state - 'list' or 'create'
   const [viewMode, setViewMode] = useState<'list' | 'create'>('list');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterDate, setFilterDate] = useState<'all' | 'today' | 'week'>('all');
+  const [filterDate, setFilterDate] = useState<'all' | 'today' | 'week'>('today');
   
   // Form state
   const [vehicleType, setVehicleType] = useState<'car' | 'motorcycle'>('car');
@@ -445,6 +446,21 @@ export function QueueManagement() {
           onConfirm={confirmStatusChange}
         />
         {/* Stats */}
+        {isLoading ? (
+          <div className="grid md:grid-cols-4 gap-6 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-50 p-6 rounded-xl border-2 border-gray-200">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-8 h-8" />
+                  <div className="flex-1">
+                    <Skeleton className="h-8 w-12 mb-2" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="grid md:grid-cols-4 gap-6 mb-6">
           <div className="bg-yellow-50 p-6 rounded-xl border-2 border-yellow-200">
             <div className="flex items-center gap-3">
@@ -483,8 +499,10 @@ export function QueueManagement() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Header with Big Add Button */}
+        {!isLoading && (
         <div className="flex justify-between items-center mb-6">
           <div className="flex gap-2 flex-wrap">
             <button
@@ -520,30 +538,21 @@ export function QueueManagement() {
               Completed
             </button>
             <div className="flex items-center gap-2 ml-2">
-              <button
-                onClick={() => setFilterDate('all')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filterDate === 'all' ? 'bg-gray-100 text-gray-900' : 'bg-white text-gray-600 border border-[#D1D5DC]'
-                }`}
+              <select
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value as 'all' | 'today' | 'week')}
+                className="px-4 pr-10 py-2 bg-white border border-[#FCDE04] rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#FCDE04] text-gray-700 appearance-none cursor-pointer"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                  backgroundSize: '18px',
+                }}
               >
-                All
-              </button>
-              <button
-                onClick={() => setFilterDate('today')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filterDate === 'today' ? 'bg-[#FCDE04] text-[#1D1D1D]' : 'bg-white text-gray-600 border border-[#D1D5DC]'
-                }`}
-              >
-                Today
-              </button>
-              <button
-                onClick={() => setFilterDate('week')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filterDate === 'week' ? 'bg-[#FCDE04] text-[#1D1D1D]' : 'bg-white text-gray-600 border border-[#D1D5DC]'
-                }`}
-              >
-                This week
-              </button>
+                <option value="all">All</option>
+                <option value="today">Today</option>
+                <option value="week">This week</option>
+              </select>
             </div>
           </div>
           <button
@@ -554,8 +563,30 @@ export function QueueManagement() {
             Add New Queue
           </button>
         </div>
+        )}
 
         {/* Queue List - Grouped by Customer */}
+        {isLoading ? (
+          <div className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-[#D1D5DC]">
+                <div className="mb-4">
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {[...Array(2)].map((_, j) => (
+                    <Skeleton key={j} className="h-12 w-full" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="space-y-6">
           {groupedQueuesList.length === 0 ? (
             <div className="bg-white p-12 rounded-xl shadow-sm border border-[#D1D5DC] text-center">
@@ -731,6 +762,7 @@ export function QueueManagement() {
             ))
           )}
         </div>
+        )}
       </div>
     );
   }

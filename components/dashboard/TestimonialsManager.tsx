@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Star } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function TestimonialsManager() {
-  const { testimonials, setTestimonials } = useContent();
+  const { testimonials, setTestimonials, isLoading } = useContent();
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingTestimonial, setEditingTestimonial] = useState<any>(null);
@@ -103,6 +104,27 @@ export function TestimonialsManager() {
       </div>
 
       {/* Testimonials List */}
+      {isLoading ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, j) => (
+                    <Skeleton key={j} className="w-4 h-4 rounded" />
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="w-8 h-8 rounded" />
+                  <Skeleton className="w-8 h-8 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-12 w-full mb-4" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {testimonials.map((testimonial) => (
           <div key={testimonial.id} className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
@@ -132,6 +154,7 @@ export function TestimonialsManager() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Edit/Add Modal */}
       {isEditing && (

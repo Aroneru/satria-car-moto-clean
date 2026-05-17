@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, User, Upload } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 import { useToast } from '@/context/ToastContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ImageWithFallback } from '../sections/figma/ImageWithFallback';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 export function TeamManager() {
-  const { teamMembers, setTeamMembers } = useContent();
+  const { teamMembers, setTeamMembers, isLoading } = useContent();
   const { addToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -129,6 +130,18 @@ export function TeamManager() {
       </div>
 
       {/* Team Grid */}
+      {isLoading ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 text-center">
+              <Skeleton className="w-20 h-20 rounded-full mx-auto mb-4" />
+              <Skeleton className="h-5 w-24 mx-auto mb-2" />
+              <Skeleton className="h-4 w-20 mx-auto mb-2" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {teamMembers.map((member) => (
           <div key={member.id} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 text-center">
@@ -163,6 +176,7 @@ export function TeamManager() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Edit/Add Modal */}
       {isEditing && (

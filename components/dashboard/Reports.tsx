@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { FileText, Download, Calendar, Car, Bike, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileText, Download, Calendar, Car, Bike, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -13,9 +14,52 @@ declare module 'jspdf' {
 }
 
 export function Reports() {
-  const { queueItems, transactions } = useContent();
+  const { queueItems, transactions, isLoading } = useContent();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [reportType, setReportType] = useState<'summary' | 'detailed'>('summary');
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+  
+  // Parse current selected month for navigation
+  const [pickerYear, setPickerYear] = useState(parseInt(selectedMonth.split('-')[0]));
+  const [pickerMonth, setPickerMonth] = useState(parseInt(selectedMonth.split('-')[1]));
+
+  const handlePrevMonth = () => {
+    if (pickerMonth === 1) {
+      setPickerMonth(12);
+      setPickerYear(pickerYear - 1);
+    } else {
+      setPickerMonth(pickerMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (pickerMonth === 12) {
+      setPickerMonth(1);
+      setPickerYear(pickerYear + 1);
+    } else {
+      setPickerMonth(pickerMonth + 1);
+    }
+  };
+
+  const handleSelectMonth = (month: number) => {
+    const monthStr = String(month).padStart(2, '0');
+    const yearStr = String(pickerYear).padStart(4, '0');
+    setSelectedMonth(`${yearStr}-${monthStr}`);
+    setShowMonthPicker(false);
+  };
+
+  const getSelectedMonthDisplay = () => {
+    const [year, month] = selectedMonth.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   // Get month data
   const getMonthData = () => {
@@ -226,16 +270,55 @@ export function Reports() {
       <div className="bg-white p-6 rounded-xl shadow-md mb-6">
         <h3 className="text-lg font-bold text-[#1D1D1D] mb-4">Report Settings</h3>
         <div className="grid md:grid-cols-3 gap-4">
-          <div>
+          <div className="relative">
             <label className="block text-sm font-semibold text-[#1D1D1D] mb-2">
               Select Month
             </label>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
-            />
+            <button
+              onClick={() => setShowMonthPicker(!showMonthPicker)}
+              className="w-full px-4 py-2 border border-[#FCDE04] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FCDE04] bg-white text-black font-medium flex items-center justify-between hover:bg-gray-50"
+            >
+              <span className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {getSelectedMonthDisplay()}
+              </span>
+              <ChevronRight className={`w-4 h-4 transition-transform ${showMonthPicker ? 'rotate-90' : ''}`} />
+            </button>
+            
+            {showMonthPicker && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#FCDE04] rounded-lg shadow-lg z-10 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={handlePrevMonth}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-[#1D1D1D]" />
+                  </button>
+                  <span className="font-bold text-[#1D1D1D]">{pickerYear}</span>
+                  <button
+                    onClick={handleNextMonth}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <ChevronRight className="w-5 h-5 text-[#1D1D1D]" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {monthNames.map((month, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSelectMonth(index + 1)}
+                      className={`py-2 px-3 rounded text-sm font-medium transition-colors ${
+                        pickerMonth === index + 1
+                          ? 'bg-[#FCDE04] text-[#1D1D1D]'
+                          : 'bg-gray-100 text-[#1D1D1D] hover:bg-gray-200'
+                      }`}
+                    >
+                      {month.slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -245,7 +328,13 @@ export function Reports() {
             <select
               value={reportType}
               onChange={(e) => setReportType(e.target.value as 'summary' | 'detailed')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#FCDE04] bg-white dark:bg-white text-black dark:text-black"
+              className="w-full px-4 py-2 pr-10 bg-white border border-[#FCDE04] rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-[#FCDE04] appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px center',
+                backgroundSize: '18px',
+              }}
             >
               <option value="summary">Summary Report</option>
               <option value="detailed">Detailed Report</option>
@@ -272,6 +361,19 @@ export function Reports() {
         </div>
 
         {/* Statistics Cards */}
+        {isLoading ? (
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Skeleton className="w-5 h-5" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-7 w-16" />
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <div className="flex items-center gap-2 mb-2">
@@ -323,6 +425,7 @@ export function Reports() {
             </p>
           </div>
         </div>
+        )}
 
         {/* Service Breakdown */}
         {Object.keys(serviceStats).length > 0 && (
